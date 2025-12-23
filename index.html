@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Ethan Senatore</title>
+  <link rel="stylesheet" href="/assets/css/main.css"/>
+
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <script defer src="/assets/js/include.js"></script>
+  <script defer src="/assets/js/main.js"></script>
+</head>
+<body>
+  <div class="nav-wrap" id="site-nav"></div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Robotics, vision, and learning — with a bias for clean visualizations.</h1>
+      <p>
+        I build models and systems for understanding the world (and soccer) from messy data.
+        This site is a portfolio: quick “at-a-glance” summaries, plus in-depth, paper-style project pages.
+      </p>
+
+      <div class="btns">
+        <a class="btn primary" href="/projects/">View projects</a>
+        <a class="btn" href="/about.html">About</a>
+        <a class="btn" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+      </div>
+
+      <div class="tags">
+        <span class="tag">Robotics</span>
+        <span class="tag">Computer Vision</span>
+        <span class="tag">Deep Learning</span>
+        <span class="tag">Soccer Analytics</span>
+      </div>
+    </section>
+
+    <div class="row">
+      <section class="card pad">
+        <div class="h2">Featured project</div>
+        <h3 style="margin:0 0 6px; font-size:20px;">Pass Probability Estimation (PassMap-style)</h3>
+        <p style="margin:0; color: var(--muted);">
+          A spatial model that predicts (i) pass destination distributions and (ii) completion likelihood
+          conditioned on game state tensors.
+        </p>
+        <div class="btns">
+          <a class="btn primary" href="/projects/passmap.html">In-depth</a>
+          <a class="btn" href="/projects/">All projects</a>
+        </div>
+      </section>
+
+      <section class="card pad">
+        <div class="h2">Math rendering demo</div>
+        <p style="margin:0; color: var(--muted);">
+          Inline: \(p(y\mid x)\). Display:
+        </p>
+        <div class="callout" style="margin-top:12px;">
+          \[
+            \hat{y} = \arg\max_y \; f_\theta(x, y)
+          \]
+          <div class="muted">KaTeX renders this client-side; no backend required.</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.renderMathInElement) {
+        window.renderMathInElement(document.body, {
+          delimiters: [
+            { left: "\\(", right: "\\)", display: false },
+            { left: "\\[", right: "\\]", display: true },
+          ],
+          throwOnError: false,
+        });
+      }
+    });
+  </script>
+</body>
+</html>
