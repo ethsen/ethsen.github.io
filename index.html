@@ -1,87 +1,81 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Ethan Senatore</title>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-
-  <!-- KaTeX -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-
-  <script defer src="/assets/js/include.js"></script>
-  <script defer src="/assets/js/main.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Ethan Senatore | Portfolio</title>
+  <meta name="description" content="Selected projects and brief background." />
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <script defer src="assets/js/main.js"></script>
+  <script defer src="assets/js/project.js"></script>
 </head>
+
 <body>
-  <div class="nav-wrap" id="site-nav"></div>
+  <a class="skip" href="#content">Skip to content</a>
 
-  <main class="container">
-    <section class="hero">
-      <h1>Robotics, vision, and learning — with a bias for clean visualizations.</h1>
-      <p>
-        I build models and systems for understanding the world (and soccer) from messy data.
-        This site is a portfolio: quick “at-a-glance” summaries, plus in-depth, paper-style project pages.
-      </p>
+  <header class="topbar">
+    <nav class="nav">
+      <a class="brand" href="./">
+        <span class="brand__mark">◇</span>
+        <span class="brand__text">Ethan Senatore</span>
+      </a>
 
-      <div class="btns">
-        <a class="btn primary" href="/projects/">View projects</a>
-        <a class="btn" href="/about.html">About</a>
-        <a class="btn" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+      <div class="nav__links">
+        <a href="./about/">About</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="content" class="container">
+    <section class="home">
+      <div class="intro">
+        <div class="intro__head">
+          <div class="intro__copy">
+            <p class="kicker">Ethan Senatore Portfolio</p>
+            <h1 class="title">
+              Selected Works
+              <span class="title__sub">A window into my work</span>
+            </h1>
+            <p class="lede">
+              I am a robotics graduate student focused on learning systems that bridge perception and decision-making.
+              My work explores deep learning for vision and spatial reasoning, with a bias toward clean, reproducible research.
+            </p>
+          </div>
+        </div>
+
       </div>
 
-      <div class="tags">
-        <span class="tag">Robotics</span>
-        <span class="tag">Computer Vision</span>
-        <span class="tag">Deep Learning</span>
-        <span class="tag">Soccer Analytics</span>
-      </div>
+      <section class="section" id="projects">
+        <div class="section__head">
+          <h2>Projects</h2>
+          <p class="muted">Selected work and ongoing experiments.</p>
+        </div>
+
+        <div class="toolbar toolbar--compact">
+          <label class="field">
+            <span class="field__label">Search</span>
+            <input id="home-search" type="search" placeholder="e.g., robotics, vision, systems..." autocomplete="off" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Tag</span>
+            <select id="home-tag">
+              <option value="">All</option>
+            </select>
+          </label>
+        </div>
+
+        <div id="featured-projects" class="grid grid--projects"></div>
+      </section>
     </section>
-
-    <div class="row">
-      <section class="card pad">
-        <div class="h2">Featured project</div>
-        <h3 style="margin:0 0 6px; font-size:20px;">Pass Probability Estimation (PassMap-style)</h3>
-        <p style="margin:0; color: var(--muted);">
-          A spatial model that predicts (i) pass destination distributions and (ii) completion likelihood
-          conditioned on game state tensors.
-        </p>
-        <div class="btns">
-          <a class="btn primary" href="/projects/passmap.html">In-depth</a>
-          <a class="btn" href="/projects/">All projects</a>
-        </div>
-      </section>
-
-      <section class="card pad">
-        <div class="h2">Math rendering demo</div>
-        <p style="margin:0; color: var(--muted);">
-          Inline: \(p(y\mid x)\). Display:
-        </p>
-        <div class="callout" style="margin-top:12px;">
-          \[
-            \hat{y} = \arg\max_y \; f_\theta(x, y)
-          \]
-          <div class="muted">KaTeX renders this client-side; no backend required.</div>
-        </div>
-      </section>
-    </div>
   </main>
 
-  <div id="site-footer"></div>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      if (window.renderMathInElement) {
-        window.renderMathInElement(document.body, {
-          delimiters: [
-            { left: "\\(", right: "\\)", display: false },
-            { left: "\\[", right: "\\]", display: true },
-          ],
-          throwOnError: false,
-        });
-      }
-    });
-  </script>
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> Ethan Senatore</span>
+      <span class="muted">This website was vibe coded</span>
+    </div>
+  </footer>
 </body>
 </html>

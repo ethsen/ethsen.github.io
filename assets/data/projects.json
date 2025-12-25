@@ -1,0 +1,276 @@
+{
+  "projects": [
+    {
+      "slug": "adaptive-grasping-robot",
+      "title": "Adaptive Grasping Robot",
+      "subtitle": "Tactile + vision cues for stable manipulation",
+      "summary": "Built a closed-loop grasping system that blends tactile sensing with camera feedback for robust picks.",
+      "kicker": "robotics systems",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics"],
+      "tech": ["Python", "ROS", "PyTorch"],
+      "links": [
+        { "label": "Code", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "A multi-sensor grasping loop that improves success rates on irregular objects.",
+        "problem": "Single-modality grasping struggles with occlusions and surface variation.",
+        "approach": "Fuse tactile signals with camera pose estimates and replan grips online.",
+        "results": "Improved stability and fewer failed lifts on cluttered scenes."
+      },
+      "deep": {
+        "overview": "We combine tactile feedback with visual pose tracking to update grasps in real time.",
+        "methodsBullets": [
+          "Tactile slip detection using lightweight CNNs",
+          "Pose correction from keypoint tracking",
+          "Controller with replanning triggers"
+        ],
+        "futureWork": [
+          "Generalize to deformable objects",
+          "Add uncertainty-aware planning"
+        ]
+      }
+    },
+    {
+      "slug": "campus-nav-slam",
+      "title": "Campus Navigation SLAM",
+      "subtitle": "Long-horizon localization for indoor/outdoor routes",
+      "summary": "A SLAM pipeline tailored to campus-scale navigation with map stitching and relocalization.",
+      "kicker": "mapping",
+      "year": 2024,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics", "vision"],
+      "tech": ["C++", "ROS", "OpenCV"],
+      "links": [
+        { "label": "Report", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Hybrid lidar-vision SLAM for routes that cross buildings and courtyards.",
+        "problem": "Standard indoor SLAM fails under lighting changes and open spaces.",
+        "approach": "Fuse lidar scans with visual landmarks and map segments.",
+        "results": "Stable localization across multi-building routes."
+      },
+      "deep": {
+        "overview": "We stitch local maps and relocalize via image-based place recognition.",
+        "methodsBullets": [
+          "Lidar scan matching with adaptive thresholds",
+          "Image retrieval for loop closures",
+          "Map merges with pose-graph optimization"
+        ]
+      }
+    },
+    {
+      "slug": "soccer-pass-forecast",
+      "title": "Soccer Pass Forecasting",
+      "subtitle": "Predictive models for spatial passing choices",
+      "summary": "Modeled pass destination likelihoods from multi-agent spatial context.",
+      "kicker": "learning in robotics",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["sports", "deep learning", "vision"],
+      "tech": ["PyTorch", "StatsBomb"],
+      "links": [
+        { "label": "Code", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Heatmap-based models that predict pass targets from game state.",
+        "problem": "Sparse snapshots make it hard to infer likely recipients.",
+        "approach": "Train CNNs on multi-channel pitch tensors.",
+        "results": "Localized distributions aligned with open space."
+      }
+    },
+    {
+      "slug": "robot-vision-odometry",
+      "title": "Visual Odometry Stack",
+      "subtitle": "Monocular + IMU odometry for lightweight robots",
+      "summary": "Implemented a calibrated odometry pipeline with robust drift control.",
+      "kicker": "vision systems",
+      "year": 2024,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["vision", "robotics"],
+      "tech": ["C++", "Eigen", "OpenCV"],
+      "links": [
+        { "label": "Writeup", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "A VO pipeline with IMU fusion for better drift control.",
+        "problem": "Monocular VO drifts in low-texture scenes.",
+        "approach": "Tight IMU integration and feature management.",
+        "results": "Reduced scale drift on long trajectories."
+      }
+    },
+    {
+      "slug": "assistive-robot-ux",
+      "title": "Assistive Robot UX Study",
+      "subtitle": "Human-centered interactions for home robots",
+      "summary": "Designed and evaluated interaction flows for task guidance and safety cues.",
+      "kicker": "human-robot interaction",
+      "year": 2023,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics"],
+      "tech": ["Figma", "User Studies"],
+      "links": [
+        { "label": "Summary", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Interaction patterns that improved trust and task clarity.",
+        "problem": "Users struggled to interpret robot intent during assistance.",
+        "approach": "Iterate on cues, phrasing, and feedback timing.",
+        "results": "Higher task completion and satisfaction."
+      }
+    },
+    {
+      "slug": "self-supervised-perception",
+      "title": "Self-Supervised Perception",
+      "subtitle": "Representation learning without labels",
+      "summary": "Explored contrastive pretraining to improve downstream segmentation.",
+      "kicker": "machine learning",
+      "year": 2024,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["deep learning", "vision"],
+      "tech": ["PyTorch", "Lightning"],
+      "links": [
+        { "label": "Code", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Contrastive pretraining for better segmentation with small labels.",
+        "problem": "Label scarcity limits segmentation quality.",
+        "approach": "Pretrain on unlabeled frames and fine-tune.",
+        "results": "Improved accuracy with fewer labeled samples."
+      }
+    },
+    {
+      "slug": "warehouse-path-planning",
+      "title": "Warehouse Path Planning",
+      "subtitle": "Multi-robot coordination with dynamic obstacles",
+      "summary": "Implemented task assignment and path planning for warehouse pickers.",
+      "kicker": "planning",
+      "year": 2023,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics"],
+      "tech": ["Python", "OR-Tools"],
+      "links": [
+        { "label": "Demo", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Task allocation and collision-aware planning in shared aisles.",
+        "problem": "Naive routing increases congestion and delays.",
+        "approach": "Prioritized tasks with time-window constraints.",
+        "results": "Higher throughput and fewer conflicts."
+      }
+    },
+    {
+      "slug": "drone-mapping-pipeline",
+      "title": "Drone Mapping Pipeline",
+      "subtitle": "Terrain mapping from aerial imagery",
+      "summary": "Automated a pipeline to build elevation and texture maps from drone footage.",
+      "kicker": "mapping",
+      "year": 2024,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["vision", "robotics"],
+      "tech": ["Python", "COLMAP"],
+      "links": [
+        { "label": "Code", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "A reproducible workflow from video to terrain model.",
+        "problem": "Manual processing is slow and error-prone.",
+        "approach": "Automate extraction, alignment, and export.",
+        "results": "Faster map generation with consistent outputs."
+      }
+    },
+    {
+      "slug": "autonomous-cart",
+      "title": "Autonomous Delivery Cart",
+      "subtitle": "Sidewalk navigation with safety constraints",
+      "summary": "Designed a perception-to-planning stack for a small delivery cart prototype.",
+      "kicker": "robotics systems",
+      "year": 2023,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics"],
+      "tech": ["ROS2", "Python"],
+      "links": [
+        { "label": "Writeup", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Safe sidewalk navigation with obstacle-aware planning.",
+        "problem": "Mixed pedestrian traffic creates unpredictability.",
+        "approach": "Conservative planning with dynamic buffers.",
+        "results": "Stable navigation in controlled trials."
+      }
+    },
+    {
+      "slug": "vision-language-robot",
+      "title": "Vision-Language Robot Demo",
+      "subtitle": "Grounding text commands in tabletop scenes",
+      "summary": "Connected a vision model to a language interface for object retrieval tasks.",
+      "kicker": "perception",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["deep learning", "vision", "robotics"],
+      "tech": ["PyTorch", "CLIP"],
+      "links": [
+        { "label": "Demo", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Text-guided retrieval in cluttered tabletop scenes.",
+        "problem": "Ambiguous language makes targeting hard.",
+        "approach": "Ground phrases to regions with similarity scores.",
+        "results": "Accurate retrieval with natural language prompts."
+      }
+    },
+    {
+      "slug": "robotics-teaching-kit",
+      "title": "Robotics Teaching Kit",
+      "subtitle": "Hands-on labs for intro robotics",
+      "summary": "Designed lab modules and starter code for a robotics course.",
+      "kicker": "education",
+      "year": 2022,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["robotics"],
+      "tech": ["Python", "Arduino"],
+      "links": [
+        { "label": "Materials", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Modular labs spanning sensing, control, and mapping.",
+        "problem": "Students needed practical scaffolding.",
+        "approach": "Create clear, incremental lab modules.",
+        "results": "Higher engagement and smoother onboarding."
+      }
+    },
+    {
+      "slug": "soccer-analytics-dash",
+      "title": "Soccer Analytics Dashboard",
+      "subtitle": "Interactive data storytelling for matches",
+      "summary": "Built a dashboard that surfaces spatial trends and match events.",
+      "kicker": "data visualization",
+      "year": 2022,
+      "featured": false,
+      "thumbnail": "assets/img/project-placeholder.svg",
+      "tags": ["sports"],
+      "tech": ["D3.js", "JavaScript"],
+      "links": [
+        { "label": "Demo", "href": "https://github.com/", "kind": "primary" }
+      ],
+      "glance": {
+        "oneLiner": "Interactive charts for match timelines and spatial trends.",
+        "problem": "Match reports lack visual context.",
+        "approach": "Combine timelines with pitch-based overlays.",
+        "results": "Clearer insights into team patterns."
+      }
+    }
+  ]
+}

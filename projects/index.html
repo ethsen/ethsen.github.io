@@ -1,72 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Projects · Ethan Senatore</title>
-  <link rel="stylesheet" href="/assets/css/main.css"/>
-  <script defer src="/assets/js/include.js"></script>
-  <script defer src="/assets/js/main.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Projects | Retro Wireframe</title>
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <script defer src="../assets/js/main.js"></script>
+  <script defer src="../assets/js/project.js"></script>
 </head>
+
 <body>
-  <div class="nav-wrap" id="site-nav"></div>
+  <header class="topbar">
+    <nav class="nav">
+      <a class="brand" href="../">
+        <span class="brand__mark">◇</span>
+        <span class="brand__text">Ethan Senatore</span>
+      </a>
+      <div class="nav__links">
+        <a href="../about/">About</a>
+      </div>
+    </nav>
+  </header>
 
   <main class="container">
-    <section class="hero">
+    <section class="pagehead">
       <h1>Projects</h1>
-      <p>
-        At-a-glance summaries with links to code, plus in-depth pages written like short papers.
-      </p>
+      <p class="muted">Filter, open at-a-glance, then dive deeper.</p>
     </section>
 
-    <div style="height:14px;"></div>
+    <section class="section">
+      <div class="toolbar">
+        <label class="field">
+          <span class="field__label">Search</span>
+          <input id="proj-search" type="search" placeholder="e.g., soccer, nerf, diffusion..." autocomplete="off" />
+        </label>
 
-    <section class="grid">
-      <!-- Project card 1 -->
-      <article class="card project-card">
-        <div class="thumb">
-          <img src="/assets/img/passmap-teaser.svg" alt="PassMap teaser"/>
-        </div>
-        <div class="body">
-          <h3 class="title">Pass Probability Estimation (PassMap-style)</h3>
-          <p class="desc">
-            Predict destination distributions and completion likelihood over a spatial grid from broadcast-derived freeze frames.
-          </p>
-          <div class="tags">
-            <span class="tag">PyTorch</span>
-            <span class="tag">CNN</span>
-            <span class="tag">Soccer</span>
-          </div>
-          <div class="btns">
-            <a class="btn primary" href="/projects/passmap.html">In-depth</a>
-            <a class="btn" href="https://github.com/" target="_blank" rel="noreferrer">Code</a>
-          </div>
-        </div>
-      </article>
+        <label class="field">
+          <span class="field__label">Tag</span>
+          <select id="proj-tag">
+            <option value="">All</option>
+          </select>
+        </label>
 
-      <!-- Project card 2 (template) -->
-      <article class="card project-card">
-        <div class="thumb" style="padding:18px; color: rgba(255,255,255,0.7);">
-          Add a thumbnail
-        </div>
-        <div class="body">
-          <h3 class="title">Project Title</h3>
-          <p class="desc">
-            One-sentence claim. What does it do, and why does it matter?
-          </p>
-          <div class="tags">
-            <span class="tag">Vision</span>
-            <span class="tag">Robotics</span>
-          </div>
-          <div class="btns">
-            <a class="btn primary" href="#">In-depth</a>
-            <a class="btn" href="#" target="_blank" rel="noreferrer">Code</a>
-          </div>
-        </div>
-      </article>
+        <label class="field">
+          <span class="field__label">Sort</span>
+          <select id="proj-sort">
+            <option value="featured">Featured</option>
+            <option value="newest">Newest</option>
+            <option value="title">Title</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="projects-grid" class="grid"></div>
     </section>
   </main>
 
-  <div id="site-footer"></div>
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> Ethan Senatore</span>
+      <span class="muted">projects channel</span>
+    </div>
+  </footer>
 </body>
 </html>

@@ -1,20 +1,22 @@
-async function includeInto(selector, url) {
-  const el = document.querySelector(selector);
-  if (!el) return;
-
-  try {
-    const res = await fetch(url, { cache: "no-cache" });
-    if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-    el.innerHTML = await res.text();
-  } catch (err) {
-    console.error(err);
-  }
+// script.js
+function showDetail(projectId) {
+    // Logic to switch the 'Home' view to a specific 'Project Detail' view
+    const mainContent = document.getElementById('home');
+    mainContent.innerHTML = `
+        <button onclick="location.reload()"> [BACK_TO_GRID] </button>
+        <div class="wireframe-border" style="margin-top:20px;">
+            <h2>In-Depth: ${projectId}</h2>
+            <p>Detailed technical challenges, wireframes, and code snippets go here...</p>
+            </div>
+    `;
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  await includeInto("#site-nav", "/partials/nav.html");
-  await includeInto("#site-footer", "/partials/footer.html");
-
-  const year = document.getElementById("year");
-  if (year) year.textContent = new Date().getFullYear();
+// Simple Tab Navigation
+document.querySelectorAll('nav a').forEach(link => {
+    link.onclick = (e) => {
+        e.preventDefault();
+        const target = link.getAttribute('href').substring(1);
+        document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+        document.getElementById(target).style.display = 'block';
+    }
 });

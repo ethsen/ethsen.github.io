@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resume | Retro Wireframe</title>
+  <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <script defer src="../assets/js/main.js"></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <nav class="nav">
+      <a class="brand" href="../">
+        <span class="brand__mark">◇</span>
+        <span class="brand__text">Ethan Senatore</span>
+      </a>
+      <div class="nav__links">
+        <a href="../about/">About</a>
+        <a class="is-active" href="./">Resume</a>
+        <a class="btn btn--small" href="resume.pdf" download>Download PDF</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="pagehead">
+      <h1>Resume</h1>
+      <p class="muted">Drop your PDF at <code>resume/resume.pdf</code>.</p>
+    </section>
+
+    <section class="section">
+      <div class="card card--wide">
+        <div class="row row--between row--wrap">
+          <div>
+            <h2 class="h2">Embedded PDF</h2>
+            <p class="muted">If embed is blocked by browser settings, use the download button.</p>
+          </div>
+          <div class="row">
+            <a class="btn btn--ghost" href="resume.pdf" target="_blank" rel="noreferrer">Open in new tab</a>
+            <a class="btn" href="resume.pdf" download>Download</a>
+          </div>
+        </div>
+
+        <div class="pdf">
+          <iframe
+            title="Resume PDF"
+            src="resume.pdf"
+            loading="lazy"
+            referrerpolicy="no-referrer"
+          ></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span class="muted">© <span id="year"></span> Ethan Senatore</span>
+      <span class="muted">document channel</span>
+    </div>
+  </footer>
+</body>
+</html>
