@@ -37,4 +37,17 @@
       // Ignore storage failures.
     }
   });
+
+  const gallery = document.getElementById("about-gallery");
+  if (!gallery) return;
+
+  const controls = document.querySelectorAll("[data-gallery]");
+  controls.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const dir = btn.getAttribute("data-gallery");
+      const delta = dir === "prev" ? -1 : 1;
+      const cardWidth = gallery.firstElementChild ? gallery.firstElementChild.getBoundingClientRect().width : 240;
+      gallery.scrollBy({ left: delta * (cardWidth + 12), behavior: "smooth" });
+    });
+  });
 })();

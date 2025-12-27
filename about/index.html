@@ -17,7 +17,7 @@
         <span class="brand__text">Ethan Senatore</span>
       </a>
       <div class="nav__links">
-        <a class="is-active" href="./">About</a>
+        <a class="btn btn--small btn--ghost is-active" href="./">About</a>
         <button class="btn btn--small btn--ghost" id="theme-toggle" type="button">Dark mode</button>
       </div>
     </nav>
@@ -32,6 +32,10 @@
       </header>
 
       <section class="about__section">
+        <figure class="about__figure about__figure--left">
+          <img src="../assets/img/about-1.svg" alt="Placeholder for a lab or research image" />
+          <figcaption>A place to include a lab photo, a prototype, or a project image.</figcaption>
+        </figure>
         <p>
           I am a robotics graduate student working on learning systems that connect perception to action.
           My work tends to sit at the boundary between computer vision, decision-making, and real-world deployment.
@@ -39,12 +43,11 @@
         </p>
       </section>
 
-      <figure class="about__figure">
-        <img src="../assets/img/about-1.svg" alt="Placeholder for a lab or research image" />
-        <figcaption>A place to include a lab photo, a prototype, or a project image.</figcaption>
-      </figure>
-
       <section class="about__section">
+        <figure class="about__figure about__figure--right">
+          <img src="../assets/img/about-2.svg" alt="Placeholder for a field or soccer image" />
+          <figcaption>Space for a personal image, field work, or something beyond the lab.</figcaption>
+        </figure>
         <h2>Interests</h2>
         <p>
           I am most excited by problems that mix spatial reasoning with learning: multi-agent modeling, mapping,
@@ -53,11 +56,6 @@
         </p>
       </section>
 
-      <figure class="about__figure about__figure--right">
-        <img src="../assets/img/about-2.svg" alt="Placeholder for a field or soccer image" />
-        <figcaption>Space for a personal image, field work, or something beyond the lab.</figcaption>
-      </figure>
-
       <section class="about__section">
         <h2>Beyond research</h2>
         <p>
@@ -65,6 +63,26 @@
           and strategy. I like projects that blend technical depth with human context, whether that is
           building a tool for athletes, or exploring the way people interpret model outputs.
         </p>
+      </section>
+
+      <section class="about__section">
+        <h2>Gallery</h2>
+        <p>
+          A scrollable image strip for more moments, projects, or personal snapshots. Replace the placeholders
+          with your images and keep as many as you like.
+        </p>
+        <div class="gallery">
+          <div class="gallery__track" id="about-gallery">
+            <img src="../assets/img/about-1.svg" alt="Gallery image 1" />
+            <img src="../assets/img/about-2.svg" alt="Gallery image 2" />
+            <img src="../assets/img/project-placeholder.svg" alt="Gallery image 3" />
+            <img src="../assets/img/profile-placeholder.svg" alt="Gallery image 4" />
+          </div>
+          <div class="gallery__controls">
+            <button class="btn btn--ghost btn--small" type="button" data-gallery="prev">Prev</button>
+            <button class="btn btn--ghost btn--small" type="button" data-gallery="next">Next</button>
+          </div>
+        </div>
       </section>
     </article>
   </main>
