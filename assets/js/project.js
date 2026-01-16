@@ -1,8 +1,14 @@
+let projectsCachePromise = null;
 async function loadProjects() {
-  const res = await fetch(getBasePath() + "assets/data/projects.json", { cache: "no-store" });
-  if (!res.ok) throw new Error("Failed to load projects.json");
-  const data = await res.json();
-  return Array.isArray(data.projects) ? data.projects : [];
+  if (!projectsCachePromise) {
+    projectsCachePromise = fetch(getBasePath() + "assets/data/projects.json", { cache: "no-store" })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to load projects.json");
+        return res.json();
+      })
+      .then(data => (Array.isArray(data.projects) ? data.projects : []));
+  }
+  return projectsCachePromise;
 }
 
 // Works on root domain and on https://USER.github.io/REPO/
@@ -36,10 +42,12 @@ function safeLink(href) {
 
 function projectUrl(slug, view = "glance") {
   // project.html is inside /projects/
-  const base = getBasePath();
   const inProjectsDir = /\/projects\//.test(window.location.pathname);
-  const prefix = inProjectsDir ? "" : "projects/";
-  return `${base}${prefix}project.html?slug=${encodeURIComponent(slug)}&view=${encodeURIComponent(view)}`;
+  if (inProjectsDir) {
+    return `project.html?slug=${encodeURIComponent(slug)}&view=${encodeURIComponent(view)}`;
+  }
+  const base = getBasePath();
+  return `${base}projects/project.html?slug=${encodeURIComponent(slug)}&view=${encodeURIComponent(view)}`;
 }
 
 function projectThumb(p) {
@@ -216,18 +224,147 @@ function renderLinks(links) {
   });
 }
 
-function renderBlock(title, paragraphs = [], bullets = null) {
-  const block = el("div", { class: "block" });
-  if (title) block.appendChild(el("h2", { text: title }));
+function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
+  const block = el("section", { class: "block" });
+  if (opts.id) block.id = opts.id;
+  const headingTag = opts.headingTag || "h2";
+  if (title) block.appendChild(el(headingTag, { text: title }));
 
-  paragraphs.filter(Boolean).forEach(p => block.appendChild(el("p", { text: p })));
+  const paraEls = [];
+  paragraphs.filter(Boolean).forEach(p => {
+    const node = el("p", { text: p });
+    paraEls.push(node);
+    block.appendChild(node);
+  });
+
+  if (opts.lede && paraEls.length) {
+    paraEls[0].classList.add("lede", "dropcap");
+  }
 
   if (Array.isArray(bullets) && bullets.length) {
     const ul = el("ul");
     bullets.forEach(b => ul.appendChild(el("li", { text: b })));
     block.appendChild(ul);
   }
+
+  if (opts.callout && opts.callout.text) {
+    const callout = el("div", { class: "callout" });
+    if (opts.callout.label) {
+      callout.appendChild(el("div", { class: "callout__label", text: opts.callout.label }));
+    }
+    callout.appendChild(el("p", { text: opts.callout.text }));
+    block.appendChild(callout);
+  }
+
   return block;
+}
+
+function assetUrl(src) {
+  if (!src) return "";
+  if (src.startsWith("http://") || src.startsWith("https://")) return src;
+  const clean = src.replace(/^\//, "");
+  return getBasePath() + clean;
+}
+
+function renderFigure(fig) {
+  if (!fig) return null;
+  let media = null;
+  if (Array.isArray(fig.images) && fig.images.length) {
+    const grid = el("div", { class: "figure__grid" });
+    fig.images.forEach(i => {
+      if (!i?.src) return;
+      grid.appendChild(el("img", {
+        src: assetUrl(i.src),
+        alt: i.alt || fig.caption || "Project figure",
+        loading: "lazy"
+      }));
+    });
+    media = grid;
+  } else if (fig.src) {
+    media = el("img", {
+      src: assetUrl(fig.src),
+      alt: fig.alt || fig.caption || "Project figure",
+      loading: "lazy"
+    });
+  } else {
+    return null;
+  }
+  const children = [media];
+  if (fig.caption) children.push(el("figcaption", { text: fig.caption }));
+  return el("figure", { class: "figure" }, children);
+}
+
+function renderFigures(figures) {
+  if (!Array.isArray(figures) || !figures.length) return null;
+  const wrap = el("div", { class: "figures" });
+  figures.map(renderFigure).filter(Boolean).forEach(node => wrap.appendChild(node));
+  return wrap;
+}
+
+function renderTable(table) {
+  if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return null;
+  const wrap = el("div", { class: "table" });
+
+  const t = el("table");
+  const thead = el("thead");
+  const headRow = el("tr");
+  table.columns.forEach(c => headRow.appendChild(el("th", { text: c })));
+  thead.appendChild(headRow);
+  t.appendChild(thead);
+
+  const tbody = el("tbody");
+  table.rows.forEach(r => {
+    const row = el("tr");
+    r.forEach(cell => row.appendChild(el("td", { text: String(cell) })));
+    tbody.appendChild(row);
+  });
+  t.appendChild(tbody);
+  wrap.appendChild(t);
+  if (table.title) wrap.appendChild(el("div", { class: "table__caption", text: table.title }));
+  return wrap;
+}
+
+function renderTables(tables) {
+  if (!Array.isArray(tables) || !tables.length) return null;
+  const wrap = el("div", { class: "tables" });
+  tables.map(renderTable).filter(Boolean).forEach(node => wrap.appendChild(node));
+  return wrap;
+}
+
+function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures = null, tables = null, opts = {}) {
+  const block = renderBlock(title, paragraphs, bullets, opts);
+  const figs = renderFigures(figures);
+  if (figs) block.appendChild(figs);
+  const tbls = renderTables(tables);
+  if (tbls) block.appendChild(tbls);
+  return block;
+}
+
+function initTocHighlight(sectionIds) {
+  if (!sectionIds?.length) return;
+  const tocLinks = new Map();
+  sectionIds.forEach(id => {
+    const link = document.querySelector(`#proj-toc a[href="#${id}"]`);
+    if (link) tocLinks.set(id, link);
+  });
+  if (!tocLinks.size) return;
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      const id = entry.target.getAttribute("id");
+      const link = tocLinks.get(id);
+      if (!link) return;
+      if (entry.isIntersecting) {
+        tocLinks.forEach(l => l.classList.remove("is-current"));
+        link.classList.add("is-current");
+      }
+    });
+  }, { rootMargin: "-20% 0px -60% 0px", threshold: 0.01 });
+
+  sectionIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
 }
 
 async function initProjectPage() {
@@ -269,10 +406,18 @@ async function initProjectPage() {
   btnDeep.href = projectUrl(p.slug, "deep");
   if (view === "glance") {
     btnGlance.classList.remove("btn--ghost");
+    btnGlance.classList.add("is-active");
+    btnGlance.setAttribute("aria-current", "page");
     btnDeep.classList.add("btn--ghost");
+    btnDeep.classList.remove("is-active");
+    btnDeep.removeAttribute("aria-current");
   } else {
     btnDeep.classList.remove("btn--ghost");
+    btnDeep.classList.add("is-active");
+    btnDeep.setAttribute("aria-current", "page");
     btnGlance.classList.add("btn--ghost");
+    btnGlance.classList.remove("is-active");
+    btnGlance.removeAttribute("aria-current");
   }
 
   // Links row
@@ -281,30 +426,59 @@ async function initProjectPage() {
   // Body
   const body = document.getElementById("proj-body");
   body.innerHTML = "";
+  body.classList.remove("proj-body--glance", "proj-body--deep");
+  body.classList.add(view === "glance" ? "proj-body--glance" : "proj-body--deep");
+  const hideFigures = Boolean(p.hideFigures);
+
+  const toc = document.getElementById("proj-toc");
+  const aside = document.getElementById("proj-aside");
+  if (toc) toc.innerHTML = "";
+  if (aside) aside.hidden = view !== "deep";
 
   if (view === "glance") {
-    body.appendChild(renderBlock("At-a-glance", [
-      p.glance?.oneLiner || p.summary || "",
-    ]));
-
-    body.appendChild(renderBlock("Problem", [p.glance?.problem || "" ]));
-    body.appendChild(renderBlock("Approach", [p.glance?.approach || "" ], p.glance?.approachBullets || null));
-    body.appendChild(renderBlock("Results", [p.glance?.results || "" ], p.glance?.resultsBullets || null));
+    const problemLines = [p.glance?.oneLiner, p.glance?.problem || p.summary].filter(Boolean);
+    body.appendChild(renderBlockWithFigures("Problem statement", problemLines, null, hideFigures ? null : p.glance?.problemFigures || null, p.glance?.problemTables || null, { lede: true }));
+    body.appendChild(renderBlockWithFigures("Approach", [p.glance?.approach || "" ], p.glance?.approachBullets || null, hideFigures ? null : p.glance?.approachFigures || null, p.glance?.approachTables || null));
+    body.appendChild(renderBlockWithFigures("Results", [p.glance?.results || "" ], p.glance?.resultsBullets || null, hideFigures ? null : p.glance?.resultsFigures || null, p.glance?.resultsTables || null));
 
     if (p.glance?.takeaways?.length) {
-      body.appendChild(renderBlock("Key takeaways", [], p.glance.takeaways));
+      body.appendChild(renderBlockWithFigures("Key takeaways", [], p.glance.takeaways, hideFigures ? null : p.glance?.takeawayFigures || null, p.glance?.takeawayTables || null));
     }
   } else {
-    body.appendChild(renderBlock("In-depth", [
-      p.deep?.overview || p.subtitle || p.summary || ""
-    ]));
+    const sectionIds = [];
+    if (Array.isArray(p.deep?.sections) && p.deep.sections.length) {
+      p.deep.sections.forEach((s, idx) => {
+        const sectionId = s.title ? s.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") : "";
+        if (toc && s.title) {
+          toc.appendChild(el("a", { href: `#${sectionId}`, text: s.title }));
+        }
+        if (sectionId) sectionIds.push(sectionId);
+        body.appendChild(renderBlockWithFigures(
+          s.title || "",
+          s.paragraphs || [],
+          s.bullets || null,
+          hideFigures ? null : s.figures || null,
+          s.tables || null,
+          {
+            id: sectionId || undefined,
+            lede: idx === 0,
+            callout: s.callout || null
+          }
+        ));
+      });
+      initTocHighlight(sectionIds);
+    } else {
+      body.appendChild(renderBlockWithFigures("Overview", [
+        p.deep?.overview || p.subtitle || p.summary || ""
+      ], null, hideFigures ? null : p.deep?.overviewFigures || null, p.deep?.overviewTables || null, { lede: true }));
 
-    if (p.deep?.methods) body.appendChild(renderBlock("Methods", [p.deep.methods], p.deep.methodsBullets || null));
-    if (p.deep?.data) body.appendChild(renderBlock("Data", [p.deep.data], p.deep.dataBullets || null));
-    if (p.deep?.experiments) body.appendChild(renderBlock("Experiments", [p.deep.experiments], p.deep.experimentsBullets || null));
-    if (p.deep?.notes) body.appendChild(renderBlock("Notes", [p.deep.notes], p.deep.notesBullets || null));
+      if (p.deep?.methods) body.appendChild(renderBlockWithFigures("Methods", [p.deep.methods], p.deep.methodsBullets || null, hideFigures ? null : p.deep?.methodsFigures || null, p.deep?.methodsTables || null));
+      if (p.deep?.data) body.appendChild(renderBlockWithFigures("Data", [p.deep.data], p.deep.dataBullets || null, hideFigures ? null : p.deep?.dataFigures || null, p.deep?.dataTables || null));
+      if (p.deep?.experiments) body.appendChild(renderBlockWithFigures("Experiments", [p.deep.experiments], p.deep.experimentsBullets || null, hideFigures ? null : p.deep?.experimentsFigures || null, p.deep?.experimentsTables || null));
+      if (p.deep?.notes) body.appendChild(renderBlockWithFigures("Notes", [p.deep.notes], p.deep.notesBullets || null, hideFigures ? null : p.deep?.notesFigures || null, p.deep?.notesTables || null));
 
-    if (p.deep?.futureWork?.length) body.appendChild(renderBlock("Future work", [], p.deep.futureWork));
+      if (p.deep?.futureWork?.length) body.appendChild(renderBlockWithFigures("Future work", [], p.deep.futureWork, hideFigures ? null : p.deep?.futureWorkFigures || null, p.deep?.futureWorkTables || null));
+    }
   }
 }
 

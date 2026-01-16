@@ -10,7 +10,7 @@
   <script defer src="../assets/js/project.js"></script>
 </head>
 
-<body>
+<body class="page-project">
   <header class="topbar">
     <nav class="nav">
       <a class="brand" href="../">
@@ -25,26 +25,30 @@
   </header>
 
   <main class="container">
-    <section class="pagehead">
+    <header class="article-hero">
       <p id="proj-kicker" class="kicker">project</p>
       <h1 id="proj-title">Project title</h1>
       <p id="proj-subtitle" class="muted">Short project subtitle goes here.</p>
 
-      <div class="row row--wrap" id="proj-tags"></div>
+      <div class="row row--wrap article-tags" id="proj-tags"></div>
 
-      <div class="row row--wrap" style="margin-top: 12px;">
+      <div class="row row--wrap article-actions">
         <a id="btn-glance" class="btn btn--small" href="#">At-a-glance</a>
         <a id="btn-deep" class="btn btn--small btn--ghost" href="#">In-depth</a>
       </div>
-    </section>
 
-    <section class="section">
-      <div id="proj-links" class="row row--wrap"></div>
-    </section>
+      <div class="row row--wrap article-links" id="proj-links"></div>
+    </header>
 
-    <section class="section">
-      <div id="proj-body" class="stack"></div>
-    </section>
+    <div class="article-wrap">
+      <article id="proj-body" class="proj-body article-content"></article>
+      <aside id="proj-aside" class="article-aside" aria-label="Article sidebar">
+        <div class="card toc">
+          <h4>In this article</h4>
+          <div id="proj-toc" class="toc__links"></div>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <footer class="footer">

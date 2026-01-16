@@ -39,16 +39,24 @@
   });
 
   const gallery = document.getElementById("about-gallery");
-  if (!gallery) return;
-
   const controls = document.querySelectorAll("[data-gallery]");
-  controls.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const dir = btn.getAttribute("data-gallery");
-      const delta = dir === "prev" ? -1 : 1;
-      const cardWidth = gallery.firstElementChild ? gallery.firstElementChild.getBoundingClientRect().width : 240;
-      gallery.scrollBy({ left: delta * (cardWidth + 12), behavior: "smooth" });
+  if (gallery) {
+    controls.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const dir = btn.getAttribute("data-gallery");
+        const delta = dir === "prev" ? -1 : 1;
+        const cardWidth = gallery.firstElementChild ? gallery.firstElementChild.getBoundingClientRect().width : 240;
+        gallery.scrollBy({ left: delta * (cardWidth + 12), behavior: "smooth" });
+      });
     });
+  }
+
+  const aboutImages = document.querySelectorAll(".about img, #about-gallery img");
+  if (!aboutImages.length) return;
+
+  aboutImages.forEach(img => {
+    if (!img.hasAttribute("loading")) img.setAttribute("loading", "lazy");
+    if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
   });
 
   const lightbox = document.createElement("div");
@@ -81,7 +89,7 @@
     document.body.style.overflow = "";
   };
 
-  gallery.querySelectorAll("img").forEach(img => {
+  aboutImages.forEach(img => {
     img.setAttribute("tabindex", "0");
     img.setAttribute("role", "button");
     img.addEventListener("click", () => openLightbox(img));
