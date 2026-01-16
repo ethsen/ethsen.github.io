@@ -50,4 +50,56 @@
       gallery.scrollBy({ left: delta * (cardWidth + 12), behavior: "smooth" });
     });
   });
+
+  const lightbox = document.createElement("div");
+  lightbox.className = "lightbox";
+  lightbox.setAttribute("role", "dialog");
+  lightbox.setAttribute("aria-modal", "true");
+  lightbox.setAttribute("aria-hidden", "true");
+  lightbox.innerHTML = `
+    <button class="lightbox__close" type="button" aria-label="Close image">Close</button>
+    <img class="lightbox__img" alt="">
+  `;
+  document.body.appendChild(lightbox);
+
+  const lightboxImg = lightbox.querySelector(".lightbox__img");
+  const lightboxClose = lightbox.querySelector(".lightbox__close");
+
+  const openLightbox = (img) => {
+    lightboxImg.src = img.currentSrc || img.src;
+    lightboxImg.alt = img.alt || "Gallery image";
+    lightbox.classList.add("is-open");
+    lightbox.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    lightboxClose.focus();
+  };
+
+  const closeLightbox = () => {
+    lightbox.classList.remove("is-open");
+    lightbox.setAttribute("aria-hidden", "true");
+    lightboxImg.src = "";
+    document.body.style.overflow = "";
+  };
+
+  gallery.querySelectorAll("img").forEach(img => {
+    img.setAttribute("tabindex", "0");
+    img.setAttribute("role", "button");
+    img.addEventListener("click", () => openLightbox(img));
+    img.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openLightbox(img);
+      }
+    });
+  });
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightbox.addEventListener("click", (event) => {
+    if (event.target === lightbox) closeLightbox();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && lightbox.classList.contains("is-open")) {
+      closeLightbox();
+    }
+  });
 })();

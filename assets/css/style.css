@@ -69,6 +69,8 @@ body{
   font-family: var(--sans);
   background: var(--bg);
   overflow-x: hidden;
+  position: relative;
+  z-index: 0;
 }
 
 /* hard-override any leftover bright text */
@@ -85,6 +87,7 @@ body::before{
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 0;
   background:
     /* soft vignette / paper depth */
     var(--vignette-1),
@@ -104,6 +107,7 @@ body::after{
   position: fixed;
   inset: 0;
   pointer-events: none;
+  z-index: 0;
   background: repeating-linear-gradient(
     to bottom,
     rgba(255,255,255,0.04) 0px,
@@ -112,6 +116,11 @@ body::after{
     transparent 6px
   );
   opacity: 0.18;
+}
+
+body > *{
+  position: relative;
+  z-index: 1;
 }
 
 /* Utilities */
@@ -505,6 +514,7 @@ a:hover{ text-decoration: none; }
   border: 1px solid var(--line2);
   background: var(--panel2);
   scroll-snap-align: start;
+  cursor: zoom-in;
 }
 .gallery__controls{
   display:flex;
@@ -514,6 +524,41 @@ a:hover{ text-decoration: none; }
 .gallery__controls .btn{
   padding: 8px 10px;
   border-radius: 12px;
+}
+.lightbox{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 12, 0.78);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease;
+  z-index: 9999;
+}
+.lightbox.is-open{
+  opacity: 1;
+  pointer-events: auto;
+}
+.lightbox__img{
+  max-width: min(92vw, 1100px);
+  max-height: 85vh;
+  border-radius: var(--radius2);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  background: var(--panel2);
+}
+.lightbox__close{
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background: var(--panel);
+  color: var(--text);
+  cursor: pointer;
 }
 
 @media (max-width: 760px){
