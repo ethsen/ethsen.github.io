@@ -1,9 +1,9 @@
 {
   "slug": "soccer-pass-forecast",
-  "title": "Soccer Pass Forecasting",
-  "subtitle": "Predictive models for spatial passing choices",
-  "summary": "Modeled pass destination likelihoods from multi-agent spatial context.",
-  "kicker": "learning in robotics",
+  "title": "LEARNING SPATIAL PASS FEASIBILITY UNDER PARTIAL OBSERVABILITY IN SOCCER",
+  "subtitle": "Estimating pass feasibility from sparse freeze-frame state tensors",
+  "summary": "Studied whether interpretable pass probability surfaces can be learned from sparse event-aligned snapshots using structured spatial representations and controlled ablations.",
+  "kicker": "sports analytics",
   "year": 2025,
   "featured": true,
   "thumbnail": "assets/img/project-placeholder.svg",
@@ -16,17 +16,322 @@
     "PyTorch",
     "StatsBomb"
   ],
+  "hideFigures": false,
   "links": [
     {
-      "label": "Code",
+      "label": "Repo",
       "href": "https://github.com/",
       "kind": "primary"
     }
   ],
   "glance": {
-    "oneLiner": "Heatmap-based models that predict pass targets from game state.",
-    "problem": "Sparse snapshots make it hard to infer likely recipients.",
-    "approach": "Train CNNs on multi-channel pitch tensors.",
-    "results": "Localized distributions aligned with open space."
+    "oneLiner": "Heatmap-based models that forecast pass targets from the full game state.",
+    "problem": "Passes are context-heavy decisions that depend on player spacing, pressure, and tactical structure, yet most models only see partial snapshots.",
+    "approach": "Represent each frame as a multi-channel pitch tensor (ball, teammates, defenders, and orientation) and train CNNs to output a destination probability map.",
+    "results": "Predictions concentrate in open lanes and toward high-value receiving zones, with clear sensitivity to pressure and nearby support.",
+    "takeaways": [
+      "Spatial context is the strongest driver of pass choice; ball-only features underperform.",
+      "Team shape priors improve stability, especially in congested midfield sequences.",
+      "Context ablations reveal which channels most influence the forecast map.",
+      "Heatmap outputs provide an interpretable lens for scouting and coaching analysis."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "paragraphs": [
+          "Sequential decision-making relies on a state representation, but soccer offers only partial observability and no compact state that captures intent, motion, and tactics. Spatiotemporal tracking data can approximate a full state, yet broadcast-derived event data provides only sparse freeze-frame snapshots.",
+          "Prior work on long-horizon value estimation exposed how representation gaps and missing context can destabilize learning. This project returns to the foundations and asks: how much information is needed to recover meaningful spatial structure in passing when the state is incomplete?",
+          "Using StatsBomb Open freeze frames, we model dense pass-feasibility surfaces from event-aligned observations. We design spatial feature channels for pitch geometry, player and ball encodings, and interaction-based control maps, then evaluate their effect through controlled ablations with a fixed fully convolutional model."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/soccer-pass-forecast/visibility.png",
+            "alt": "Placeholder pass feasibility figure",
+            "caption": "Figure I: Broadcast visible area and player positions for a single frame, demonstrating the limited field of view available to broadcast-based soccer models. Attacking players (blue), defending players (orange), and the ball (black) are shown; only the shaded region corresponds to what is observable in the broadcast view.",
+            "wide": false,
+            "scale": 0.75
+          }
+        ],
+        "callout": {
+          "label": "Key finding",
+          "text": "Full-context models outperform partial snapshots, but pressure and team-shape channels drive most of the gains."
+        }
+      },
+      {
+        "title": "Problem Setting and State Representation",
+        "paragraphs": [
+          "We study pass probability estimation from sparse, broadcast-derived soccer data. Given a game state at the moment a pass is taken, we predict a dense surface over the pitch giving completion probability for each destination. Each sample is a spatial tensor $s \\in \\mathbb{R}^{C \\times H \\times W}$ with a binary label at the observed destination cell; supervision is weak because only that cell is labeled.",
+          "To make the task identifiable under partial observability, we constrain the pass set before modeling. We keep only completed passes whose end location is within 3 meters of a teammate, which prioritizes short, directly receivable passes where success is governed primarily by local geometry rather than long-horizon intent. Player and ball coordinates are mapped to a fixed $H \\times W = 105 \\times 68$ grid and all channels normalized to a common range so the model learns comparable scales across cues.",
+          "With the supervision target fixed, we define the state in layers, starting with global structure. Static channels encode pitch geometry that is invariant across events: distance-to-boundary maps, distance to the centerline, and goal-oriented encodings such as distance and angle to the attacking goal. These priors provide a consistent spatial scaffold so the model does not need to infer field layout from sparse observations.",
+          "We then add dynamic channels for the observable game state at the pass moment, including ball-relative features and binary occupancy maps for attackers and defenders. Because freeze-frame data lacks identity tracking, we use coarse motion summaries from event-to-event displacements: team velocity from centroid shifts and ball velocity from ball displacement. These cues are weak but included to provide directional context without assuming per-player trajectories.",
+          "Finally, we introduce explicit interaction cues to bridge the gap between static geometry and sparse dynamics. Two complementary control maps are derived directly from observed player locations: a Gaussian control map and a nearest defender distance map. Both summarize how attacker and defender presence shapes pass feasibility without reconstructing unobserved players or temporal dynamics.",
+          "Let $\\mathcal{A}$ and $\\mathcal{D}$ denote the sets of observed attacker and defender grid locations. The Gaussian control map represents spatial influence by summing isotropic Gaussian kernels centered at each player location, $$A_p(g) = \\sum_{a \\in \\mathcal{A}} \\exp\\!\\left(-\\frac{\\lVert g-a\\rVert_2^2}{2\\sigma^2}\\right), \\qquad D_p(g) = \\sum_{d \\in \\mathcal{D}} \\exp\\!\\left(-\\frac{\\lVert g-d\\rVert_2^2}{2\\sigma^2}\\right).$$",
+          "These fields provide smooth estimates of attacking and defending presence, but their scale depends on the number and concentration of observed players. We therefore convert them into a relative control estimate via a smoothed dominance ratio, $$\\tilde{C}(g) = \\frac{A_p(g) + \\alpha}{A_p(g) + D_p(g) + 2\\alpha + \\varepsilon}.$$ This ratio focuses on balance rather than absolute density.",
+          "Because freeze-frames often contain large regions with little or no player information, we modulate dominance with a relative evidence weight. We define $$e(g) = \\frac{A_p(g) + D_p(g)}{\\max_{g'}\\big(A_p(g') + D_p(g')\\big) + \\varepsilon},$$ which measures local player density relative to the most densely observed region in the frame. The per-event normalization ensures $e(g)$ reflects observational support rather than global frequency.",
+          "The final Gaussian control map interpolates between dominance and a neutral prior, $$C(g) = e(g)\\,\\tilde{C}(g) + \\bigl(1 - e(g)\\bigr)\\cdot 0.5.$$ This keeps confidence high where observations are dense and conservative where the state is poorly observed.",
+          "As a simpler alternative, the nearest defender distance map encodes defensive pressure as the Euclidean distance to the closest observed defender, $$d_{\\min}(g) = \\min_{d \\in \\mathcal{D}} \\lVert g-d\\rVert_2,$$ converted to meters. This representation is robust to missing defenders and provides a sharp local constraint that complements the smoother Gaussian control map."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/project-placeholder.svg",
+            "alt": "Channel stack and control maps overview",
+            "caption": "Figure II: Overview of static channels, dynamic channels, and control maps used to construct the state tensor.",
+            "wide": true
+          }
+        ]
+      },
+      {
+        "title": "Model Architectures",
+        "paragraphs": [
+          "We evaluate three CNN variants: a shallow baseline, a deeper residual stack, and a lightweight custom model designed for interpretable spatial filters."
+        ],
+        "tables": [
+          {
+            "title": "Table I: Number of learnable parameters per architecture",
+            "columns": [
+              "Model",
+              "Parameters"
+            ],
+            "rows": [
+              [
+                "Baseline-CNN",
+                "1.20M"
+              ],
+              [
+                "Res-CNN",
+                "8.45M"
+              ],
+              [
+                "PitchNet",
+                "2.90M"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Methods",
+        "paragraphs": [
+          "Our methods cover pitch-tensor construction, channel ablations, and a shared training/evaluation protocol. We compare baselines against a custom PitchNet model built to emphasize local spatial patterns and teammate support structure.",
+          "We standardize each event into a fixed-size pitch grid and train models with cross-entropy over destination pixels. We also test heavy augmentation to reduce reliance on league-specific positional priors.",
+          "Evaluation uses top-k hit rate and expected distance error, along with saliency and occlusion tests to verify that models attend to relevant players and space."
+        ],
+        "bullets": [
+          "Phase I: Baseline training on full-context tensors.",
+          "Phase II: Channel ablations to isolate cue importance.",
+          "Phase III: Augmentation to reduce positional bias.",
+          "Augmentations: random mirroring, pitch translation, spatial jitter, and player-dropout noise."
+        ]
+      },
+      {
+        "title": "Results: Phase I (Full Context)",
+        "paragraphs": [
+          "With full context, the residual model achieves the highest hit rate, while the lightweight PitchNet remains competitive and more stable on low-sample teams."
+        ],
+        "tablesBeforeFigures": true,
+        "afterTableParagraphs": [
+          "Saliency maps emphasize nearby defenders and the nearest passing lanes, confirming the model relies on pressure and support positioning rather than ball location alone."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Input state"
+              },
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Predicted heatmap"
+              }
+            ],
+            "caption": "Figure III: Example input state and predicted destination heatmap.",
+            "wide": true,
+            "noBorder": true
+          }
+        ],
+        "tables": [
+          {
+            "title": "Table II: Validation hit rate (%) with full context",
+            "columns": [
+              "Training",
+              "Baseline",
+              "Res-CNN",
+              "PitchNet"
+            ],
+            "rows": [
+              [
+                "Scratch",
+                "41.20",
+                "48.65",
+                "46.10"
+              ],
+              [
+                "Augmented",
+                "44.18",
+                "50.40",
+                "47.92"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Results: Phase II (Ablations)",
+        "paragraphs": [
+          "Removing defenders or pressure channels reduces accuracy and broadens predicted heatmaps, indicating uncertainty without defensive context."
+        ],
+        "tablesBeforeFigures": true,
+        "afterTableParagraphs": [
+          "Ablation results confirm that teammate spacing and pressure are the dominant cues, while ball-only models underperform on lateral switches."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Ablation heatmap"
+              }
+            ],
+            "caption": "Figure IV: Heatmap shifts under defensive-channel removal.",
+            "wide": true,
+            "noBorder": true
+          }
+        ],
+        "tables": [
+          {
+            "title": "Table III: Validation hit rate (%) under channel ablations",
+            "columns": [
+              "Input",
+              "Baseline",
+              "Res-CNN",
+              "PitchNet"
+            ],
+            "rows": [
+              [
+                "Full",
+                "41.20",
+                "48.65",
+                "46.10"
+              ],
+              [
+                "No Defense",
+                "34.05",
+                "39.22",
+                "38.40"
+              ],
+              [
+                "No Pressure",
+                "36.10",
+                "41.04",
+                "40.12"
+              ],
+              [
+                "Ball Only",
+                "22.88",
+                "24.60",
+                "24.10"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Results: Phase III (Augmentation)",
+        "paragraphs": [
+          "Augmentations mitigate positional bias and improve generalization, especially for teams with atypical shapes or formations."
+        ],
+        "tablesBeforeFigures": true,
+        "afterTableParagraphs": [
+          "The gains are modest but consistent, and the predicted heatmaps remain sharper under varied pitch orientations."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Augmented heatmap example 1"
+              },
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Augmented heatmap example 2"
+              }
+            ],
+            "caption": "Figure V: Example predictions after augmentation.",
+            "wide": true,
+            "noBorder": true
+          }
+        ],
+        "tables": [
+          {
+            "title": "Table IV: Validation hit rate (%) with augmentation",
+            "columns": [
+              "Training",
+              "Baseline",
+              "Res-CNN",
+              "PitchNet"
+            ],
+            "rows": [
+              [
+                "Scratch",
+                "41.20",
+                "48.65",
+                "46.10"
+              ],
+              [
+                "Augmented",
+                "44.18",
+                "50.40",
+                "47.92"
+              ]
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Spatial Interpretability",
+        "paragraphs": [
+          "To probe what the model learns beyond hit rate, we sample predicted heatmaps for similar game states and compare their spatial structure. We measure how attention shifts with defensive pressure and teammate runs.",
+          "Across examples, heatmaps align with open lanes and supporting runs, even when the ground-truth pass targets differ, suggesting the representation captures tactical affordances rather than memorizing specific player identities.",
+          "These patterns provide an interpretable lens for analysts, helping translate model output into actionable insights about spacing and decision-making."
+        ],
+        "figures": [
+          {
+            "pager": [
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Heatmap example 1"
+              },
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Heatmap example 2"
+              },
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Heatmap example 3"
+              },
+              {
+                "src": "assets/img/project-placeholder.svg",
+                "alt": "Heatmap example 4"
+              }
+            ],
+            "caption": "Figure VI-IX: Predicted heatmaps under varied pressure and support.",
+            "wide": false,
+            "noBorder": true,
+            "autoCycle": 5000
+          }
+        ]
+      },
+      {
+        "title": "Takeaways",
+        "bullets": [
+          "Full-context spatial tensors deliver the most reliable pass forecasts.",
+          "Defensive pressure and teammate spacing are the dominant cues.",
+          "Augmentation helps reduce positional bias without blurring predictions.",
+          "Heatmap outputs offer an interpretable bridge between model and tactics."
+        ]
+      }
+    ]
   }
 }

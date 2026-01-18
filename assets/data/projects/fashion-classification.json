@@ -24,20 +24,27 @@
     },
     {
       "label": "Report (PDF)",
-      "href": "assets/docs/Fashion-Classification-Senatore-Bemiga.pdf",
+      "href": "../assets/docs/Fashion-Classification-Senatore-Bemiga.pdf",
       "kind": "secondary"
     }
   ],
+  "heroOverlay": {
+    "src": "assets/img/projects/fashion-classification/test.gif",
+    "alt": "Animated fashion overlay",
+    "animate": true,
+    "creditText": "Animation by hilbrandbos",
+    "creditHref": "https://giphy.com/hilbrandbos"
+  },
   "glance": {
-    "oneLiner": "Designer-level fashion classification with a focus on what the models are actually learning.",
-    "problem": "Runway images make designer labels look easy, but models can win by memorizing scene context instead of garment details.",
-    "approach": "Use iDesigner runway images and compare a standard ResNet family with two lightweight FashionNet variants. We test three training setups: original images, background-removed images, and heavy augmentation. We inspect model attention with Grad-CAM and check embedding similarity with nearest-neighbor retrieval.",
-    "results": "Accuracy is highest on unmasked data, yet attention often lands on the runway. Masking shifts attention onto garments but reduces accuracy, especially for smaller models. Augmentation recovers some accuracy while only partially reducing background reliance.",
+    "oneLiner": "Designer-level fashion classification that pairs accuracy metrics with interpretability checks to see what the models truly learn.",
+    "problem": "Runway images make designer labels look easy, but models can win by memorizing scene context (lighting, floor texture, venue layout) instead of garment details. We want to separate real garment understanding from background shortcuts.",
+    "approach": "Use the iDesigner runway dataset and compare a standard ResNet family with two lightweight FashionNet variants. We test three training setups: original images, background-removed images, and heavy augmentation. We inspect model attention with Grad-CAM and probe embeddings using nearest-neighbor retrieval to see what features cluster.",
+    "results": "Accuracy is highest on unmasked data, yet attention often lands on the runway rather than the clothing. Masking shifts attention onto garments but reduces accuracy, especially for smaller models. Augmentation recovers some accuracy while only partially reducing background reliance.",
     "takeaways": [
-      "Background shortcuts inflate accuracy on runway images.",
-      "Masking yields cleaner garment-focused features but needs enough model capacity.",
-      "Augmentation helps, but masking is the stronger push toward interpretability.",
-      "Feature-space neighbors cluster by garment cues like color and pattern rather than scene context."
+      "Background shortcuts inflate accuracy on runway images; interpretability checks are essential.",
+      "Masking yields cleaner garment-focused features but needs enough model capacity to avoid large accuracy drops.",
+      "Augmentation helps reduce shortcuts, but masking is the stronger push toward garment-centric reasoning.",
+      "Feature-space neighbors cluster by garment cues like color and pattern, not just by scene context."
     ]
   },
   "deep": {
