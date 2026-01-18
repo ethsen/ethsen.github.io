@@ -1,0 +1,32 @@
+{
+  "slug": "soccer-pass-forecast",
+  "title": "Soccer Pass Forecasting",
+  "subtitle": "Predictive models for spatial passing choices",
+  "summary": "Modeled pass destination likelihoods from multi-agent spatial context.",
+  "kicker": "learning in robotics",
+  "year": 2025,
+  "featured": true,
+  "thumbnail": "assets/img/project-placeholder.svg",
+  "tags": [
+    "sports",
+    "deep learning",
+    "vision"
+  ],
+  "tech": [
+    "PyTorch",
+    "StatsBomb"
+  ],
+  "links": [
+    {
+      "label": "Code",
+      "href": "https://github.com/",
+      "kind": "primary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "Heatmap-based models that predict pass targets from game state.",
+    "problem": "Sparse snapshots make it hard to infer likely recipients.",
+    "approach": "Train CNNs on multi-channel pitch tensors.",
+    "results": "Localized distributions aligned with open space."
+  }
+}

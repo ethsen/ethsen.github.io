@@ -1,0 +1,30 @@
+{
+  "slug": "robotics-teaching-kit",
+  "title": "Robotics Teaching Kit",
+  "subtitle": "Hands-on labs for intro robotics",
+  "summary": "Designed lab modules and starter code for a robotics course.",
+  "kicker": "education",
+  "year": 2022,
+  "featured": false,
+  "thumbnail": "assets/img/project-placeholder.svg",
+  "tags": [
+    "robotics"
+  ],
+  "tech": [
+    "Python",
+    "Arduino"
+  ],
+  "links": [
+    {
+      "label": "Materials",
+      "href": "https://github.com/",
+      "kind": "primary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "Modular labs spanning sensing, control, and mapping.",
+    "problem": "Students needed practical scaffolding.",
+    "approach": "Create clear, incremental lab modules.",
+    "results": "Higher engagement and smoother onboarding."
+  }
+}

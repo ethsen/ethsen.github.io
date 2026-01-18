@@ -1,0 +1,31 @@
+{
+  "slug": "self-supervised-perception",
+  "title": "Self-Supervised Perception",
+  "subtitle": "Representation learning without labels",
+  "summary": "Explored contrastive pretraining to improve downstream segmentation.",
+  "kicker": "machine learning",
+  "year": 2024,
+  "featured": false,
+  "thumbnail": "assets/img/project-placeholder.svg",
+  "tags": [
+    "deep learning",
+    "vision"
+  ],
+  "tech": [
+    "PyTorch",
+    "Lightning"
+  ],
+  "links": [
+    {
+      "label": "Code",
+      "href": "https://github.com/",
+      "kind": "primary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "Contrastive pretraining for better segmentation with small labels.",
+    "problem": "Label scarcity limits segmentation quality.",
+    "approach": "Pretrain on unlabeled frames and fine-tune.",
+    "results": "Improved accuracy with fewer labeled samples."
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "slug": "adaptive-grasping-robot",
+  "title": "Adaptive Grasping Robot",
+  "subtitle": "Tactile + vision cues for stable manipulation",
+  "summary": "Built a closed-loop grasping system that blends tactile sensing with camera feedback for robust picks.",
+  "kicker": "robotics systems",
+  "year": 2025,
+  "featured": true,
+  "thumbnail": "assets/img/project-placeholder.svg",
+  "tags": [
+    "robotics"
+  ],
+  "tech": [
+    "Python",
+    "ROS",
+    "PyTorch"
+  ],
+  "links": [
+    {
+      "label": "Code",
+      "href": "https://github.com/",
+      "kind": "primary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "A multi-sensor grasping loop that improves success rates on irregular objects.",
+    "problem": "Single-modality grasping struggles with occlusions and surface variation.",
+    "approach": "Fuse tactile signals with camera pose estimates and replan grips online.",
+    "results": "Improved stability and fewer failed lifts on cluttered scenes."
+  },
+  "deep": {
+    "overview": "We combine tactile feedback with visual pose tracking to update grasps in real time.",
+    "methodsBullets": [
+      "Tactile slip detection using lightweight CNNs",
+      "Pose correction from keypoint tracking",
+      "Controller with replanning triggers"
+    ],
+    "futureWork": [
+      "Generalize to deformable objects",
+      "Add uncertainty-aware planning"
+    ]
+  }
+}

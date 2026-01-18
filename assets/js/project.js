@@ -1,14 +1,28 @@
-let projectsCachePromise = null;
-async function loadProjects() {
-  if (!projectsCachePromise) {
-    projectsCachePromise = fetch(getBasePath() + "assets/data/projects.json", { cache: "no-store" })
+let projectsIndexCachePromise = null;
+const projectCache = new Map();
+
+async function loadProjectsIndex() {
+  if (!projectsIndexCachePromise) {
+    projectsIndexCachePromise = fetch(getBasePath() + "assets/data/projects/index.json", { cache: "no-store" })
       .then(res => {
-        if (!res.ok) throw new Error("Failed to load projects.json");
+        if (!res.ok) throw new Error("Failed to load projects index");
         return res.json();
       })
       .then(data => (Array.isArray(data.projects) ? data.projects : []));
   }
-  return projectsCachePromise;
+  return projectsIndexCachePromise;
+}
+
+async function loadProject(slug) {
+  if (!slug) return null;
+  if (projectCache.has(slug)) return projectCache.get(slug);
+  const promise = fetch(getBasePath() + `assets/data/projects/${encodeURIComponent(slug)}.json`, { cache: "no-store" })
+    .then(res => {
+      if (!res.ok) throw new Error(`Failed to load project ${slug}`);
+      return res.json();
+    });
+  projectCache.set(slug, promise);
+  return promise;
 }
 
 // Works on root domain and on https://USER.github.io/REPO/
@@ -105,7 +119,7 @@ async function initHomeProjects() {
   const search = document.getElementById("home-search");
   const tagSel = document.getElementById("home-tag");
 
-  const projects = await loadProjects();
+  const projects = await loadProjectsIndex();
 
   if (tagSel) {
     uniqueTags(projects).forEach(t => tagSel.appendChild(el("option", { value: t, text: t })));
@@ -154,7 +168,7 @@ async function initProjectsIndex() {
   const tagSel = document.getElementById("proj-tag");
   const sortSel = document.getElementById("proj-sort");
 
-  const projects = await loadProjects();
+  const projects = await loadProjectsIndex();
 
   // Populate tag dropdown
   uniqueTags(projects).forEach(t => tagSel.appendChild(el("option", { value: t, text: t })));
@@ -266,11 +280,96 @@ function assetUrl(src) {
   return getBasePath() + clean;
 }
 
+let galleryIdCounter = 0;
+const pagerAutoRegistry = (() => {
+  if (typeof window === "undefined") return new Map();
+  if (!window.__pagerAutoRegistry) window.__pagerAutoRegistry = new Map();
+  return window.__pagerAutoRegistry;
+})();
+
 function renderFigure(fig) {
   if (!fig) return null;
   let media = null;
-  if (Array.isArray(fig.images) && fig.images.length) {
-    const grid = el("div", { class: "figure__grid" });
+  if (Array.isArray(fig.pager) && fig.pager.length) {
+    let currentIndex = 0;
+    let autoTimer = null;
+    const first = fig.pager[0];
+    const pagerId = `pager-${galleryIdCounter++}`;
+    const img = el("img", {
+      src: assetUrl(first.src),
+      alt: first.alt || fig.caption || "Project figure",
+      loading: "lazy",
+      class: "pager__img",
+      "data-pager-id": pagerId
+    });
+    const updateImage = (index) => {
+      const item = fig.pager[index];
+      if (!item?.src) return;
+      img.classList.remove("is-slide");
+      void img.offsetWidth;
+      img.src = assetUrl(item.src);
+      img.alt = item.alt || fig.caption || "Project figure";
+      img.classList.add("is-slide");
+    };
+    const prevBtn = el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Prev" });
+    const nextBtn = el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Next" });
+    const goPrev = () => {
+      currentIndex = (currentIndex - 1 + fig.pager.length) % fig.pager.length;
+      updateImage(currentIndex);
+    };
+    const goNext = () => {
+      currentIndex = (currentIndex + 1) % fig.pager.length;
+      updateImage(currentIndex);
+    };
+    prevBtn.addEventListener("click", () => {
+      goPrev();
+    });
+    nextBtn.addEventListener("click", () => {
+      goNext();
+    });
+    if (fig.autoCycle) {
+      const intervalMs = Number(fig.autoCycle) || 5000;
+      const startAuto = () => {
+        if (autoTimer) return;
+        autoTimer = setInterval(goNext, intervalMs);
+      };
+      const stopAuto = () => {
+        if (!autoTimer) return;
+        clearInterval(autoTimer);
+        autoTimer = null;
+      };
+      startAuto();
+      pagerAutoRegistry.set(pagerId, { pause: stopAuto, resume: startAuto });
+    }
+    const controls = el("div", { class: "gallery__controls gallery__controls--center gallery__controls--spacious" }, [prevBtn, nextBtn]);
+    media = el("div", {}, [img, controls]);
+  } else if (Array.isArray(fig.gallery) && fig.gallery.length) {
+    const trackId = `proj-gallery-${galleryIdCounter++}`;
+    const trackAttrs = { class: "gallery__track" };
+    if (fig.controls) trackAttrs.id = trackId;
+    const track = el("div", trackAttrs);
+    fig.gallery.forEach(i => {
+      if (!i?.src) return;
+      track.appendChild(el("img", {
+        src: assetUrl(i.src),
+        alt: i.alt || fig.caption || "Project figure",
+        loading: "lazy"
+      }));
+    });
+    const galleryWrap = el("div", { class: "gallery" }, [track]);
+    if (fig.controls) {
+      const controls = el("div", { class: "gallery__controls" }, [
+        el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Prev", "data-gallery": "prev", "data-gallery-target": trackId }),
+        el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Next", "data-gallery": "next", "data-gallery-target": trackId })
+      ]);
+      media = el("div", {}, [galleryWrap, controls]);
+    } else {
+      media = galleryWrap;
+    }
+  } else if (Array.isArray(fig.images) && fig.images.length) {
+    const gridAttrs = { class: "figure__grid" };
+    if (fig.columns) gridAttrs.style = `--figure-columns: ${fig.columns};`;
+    const grid = el("div", gridAttrs);
     fig.images.forEach(i => {
       if (!i?.src) return;
       grid.appendChild(el("img", {
@@ -291,7 +390,11 @@ function renderFigure(fig) {
   }
   const children = [media];
   if (fig.caption) children.push(el("figcaption", { text: fig.caption }));
-  return el("figure", { class: "figure" }, children);
+  const classes = ["figure"];
+  if (fig.wide) classes.push("figure--wide");
+  if (fig.noBorder) classes.push("figure--no-border");
+  if (Array.isArray(fig.gallery) && fig.gallery.length === 1) classes.push("figure--gallery-single");
+  return el("figure", { class: classes.join(" ") }, children);
 }
 
 function renderFigures(figures) {
@@ -333,10 +436,41 @@ function renderTables(tables) {
 
 function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures = null, tables = null, opts = {}) {
   const block = renderBlock(title, paragraphs, bullets, opts);
-  const figs = renderFigures(figures);
-  if (figs) block.appendChild(figs);
-  const tbls = renderTables(tables);
-  if (tbls) block.appendChild(tbls);
+  const hasFigures = Array.isArray(figures) && figures.length;
+  const hasAfterFirst = Array.isArray(opts.afterFirstFigureParagraphs) && opts.afterFirstFigureParagraphs.length;
+
+  if (hasFigures && hasAfterFirst) {
+    const first = renderFigure(figures[0]);
+    if (first) block.appendChild(first);
+    opts.afterFirstFigureParagraphs.filter(Boolean).forEach(p => {
+      block.appendChild(el("p", { text: p }));
+    });
+    const rest = renderFigures(figures.slice(1));
+    if (rest) block.appendChild(rest);
+  } else {
+    if (opts.tablesBeforeFigures) {
+      const tbls = renderTables(tables);
+      if (tbls) block.appendChild(tbls);
+    }
+    if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
+      opts.afterTableParagraphs.filter(Boolean).forEach(p => {
+        block.appendChild(el("p", { text: p }));
+      });
+    }
+    const figs = renderFigures(figures);
+    if (figs) block.appendChild(figs);
+  }
+
+  if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
+    opts.afterParagraphs.filter(Boolean).forEach(p => {
+      block.appendChild(el("p", { text: p }));
+    });
+  }
+
+  if (!opts.tablesBeforeFigures) {
+    const tbls = renderTables(tables);
+    if (tbls) block.appendChild(tbls);
+  }
   return block;
 }
 
@@ -374,15 +508,14 @@ async function initProjectPage() {
   const slug = getParam("slug");
   const view = (getParam("view") || "glance").toLowerCase();
 
-  const projects = await loadProjects();
-  const p = projects.find(x => x.slug === slug);
+  const p = await loadProject(slug);
 
   if (!p) {
     titleEl.textContent = "Project not found";
     const body = document.getElementById("proj-body");
     body.innerHTML = "";
     body.appendChild(renderBlock("Missing slug", [
-      "This project slug doesn’t exist in assets/data/projects.json.",
+      "This project slug doesn’t exist in assets/data/projects/ or the file is missing.",
       "Go back to Projects and pick one from the list."
     ]));
     return;
@@ -462,7 +595,11 @@ async function initProjectPage() {
           {
             id: sectionId || undefined,
             lede: idx === 0,
-            callout: s.callout || null
+            callout: s.callout || null,
+            afterParagraphs: s.afterParagraphs || null,
+            afterFirstFigureParagraphs: s.afterFirstFigureParagraphs || null,
+            afterTableParagraphs: s.afterTableParagraphs || null,
+            tablesBeforeFigures: Boolean(s.tablesBeforeFigures)
           }
         ));
       });
@@ -480,6 +617,7 @@ async function initProjectPage() {
       if (p.deep?.futureWork?.length) body.appendChild(renderBlockWithFigures("Future work", [], p.deep.futureWork, hideFigures ? null : p.deep?.futureWorkFigures || null, p.deep?.futureWorkTables || null));
     }
   }
+
 }
 
 /* ---------- Boot ---------- */
@@ -499,7 +637,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       m.innerHTML = "";
       m.appendChild(el("div", { class: "card card--wide" }, [
         el("h3", { text: "Load error" }),
-        el("p", { class: "muted", text: "Could not load assets/data/projects.json. Check paths and GitHub Pages settings." })
+        el("p", { class: "muted", text: "Could not load assets/data/projects/index.json or a project detail file. Check paths and GitHub Pages settings." })
       ]));
     });
   }
