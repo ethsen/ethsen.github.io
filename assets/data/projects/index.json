@@ -44,7 +44,8 @@
       "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
       "kicker": "sports analytics",
       "year": 2025,
-      "featured": true,
+      "featured": false,
+      "thumbnail": "assets/img/projects/socceriq-function/thumbnail.jpg",
       "tags": [
         "sports",
         "reinforcement learning",
@@ -53,6 +54,44 @@
       "tech": [
         "Python",
         "PyTorch"
+      ]
+    },
+    {
+      "slug": "particle-filter-slam",
+      "title": "Particle Filter SLAM on KITTI LiDAR",
+      "subtitle": "Coursework implementation of particle-filter SLAM with occupancy grid mapping",
+      "summary": "Implemented the particle-filter SLAM steps on KITTI LiDAR data using a provided skeleton, focusing on dynamics, observation updates, resampling, and occupancy grid mapping.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/particle-filter-slam/thumbnail.png",
+      "tags": [
+        "robotics",
+        "slam",
+        "localization"
+      ],
+      "tech": [
+        "Python",
+        "NumPy"
+      ]
+    },
+    {
+      "slug": "ukf-orientation-estimation",
+      "title": "Unscented Kalman Filtering for 3D Orientation Estimation",
+      "subtitle": "Quaternion UKF with IMU calibration and Vicon ground truth",
+      "summary": "Implemented a quaternion-based UKF for 3D orientation estimation from raw IMU data, with a full sensor calibration pipeline and Vicon-based evaluation.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/ukf-orientation-estimation/thumbnail.png",
+      "tags": [
+        "robotics",
+        "state estimation",
+        "sensor fusion"
+      ],
+      "tech": [
+        "Python",
+        "NumPy"
       ]
     }
   ]

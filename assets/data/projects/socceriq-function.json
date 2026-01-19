@@ -5,7 +5,7 @@
   "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
   "kicker": "sports analytics",
   "year": 2025,
-  "featured": true,
+  "featured": false,
   "tags": [
     "sports",
     "reinforcement learning",
@@ -15,11 +15,31 @@
     "Python",
     "PyTorch"
   ],
+  "links": [
+    {
+      "label": "Repo",
+      "href": "https://github.com/IgnacioBoero/Soccer",
+      "kind": "primary",
+      "icon": "assets/img/github_logo.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
+    },
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/soccerIQ-Function-Senatore-Boero.pdf",
+      "kind": "secondary"
+    }
+  ],
   "glance": {
     "oneLiner": "Offline Q-function evaluation for attributing long-horizon reward to soccer actions.",
-    "problem": "Short-term outcomes often miss the value of actions that create future chances, so we need a way to estimate long-term reward from historical, policy-generated data.",
-    "approach": "Represent the state as a spatial image of players and ball, encode actions with discrete type and continuous targets, and learn a Q-network that predicts expected return from state-action pairs.",
-    "results": "Ongoing: initial focus is on building a scalable pipeline to evaluate action value without online interaction."
+    "problem": "Action value in soccer is long-horizon and context-dependent, but event-aligned data is noisy and incomplete, making credit assignment and state representation difficult.",
+    "approach": "Learn an offline Q-function using spatial state tensors (players + ball) and structured action vectors. A CNN encodes the state, an FCNN encodes actions, and a Q-head is trained with shaped possession rewards. We compare TD(0) targets against Monte Carlo returns.",
+    "results": "TD(0) fits the Bellman equation with low error and generalizes better than Monte Carlo, but qualitative heatmaps still show bias toward safe backward passes. Dribble value surfaces are weak, and data quality limits interpretability.",
+    "takeaways": [
+      "Spatial Q-approximation captures some open-space structure in passing decisions.",
+      "TD(0) targets are more stable than Monte Carlo in this noisy offline setting.",
+      "Data incompleteness and snapshot noise limit generalization and action nuance."
+    ]
   },
   "deep": {
     "sections": [
@@ -48,12 +68,15 @@
           "Regularization includes $\\ell_2$ weight decay ($10^{-6}$ to $10^{-3}$), dropout in both encoders and the Q-head ($p_{\\text{drop}}$ in $[0,0.20]$), gradient clipping at 1.0, a frozen TD(0) target network updated every 2000 iterations, and early stopping after three epochs without validation improvement.",
           "We run Optuna with 64 trials per method over the grid-search space in Table 1; best configurations and losses are shown in Table 2. TD(0) reaches 0.08 training loss and 0.12 validation loss, while Monte Carlo reaches 0.56 and 0.81, with a larger generalization gap. Losses are not directly comparable across methods because TD(0) measures Bellman consistency, $Q(s,a)-[r+Q(s',a')]$, whereas Monte Carlo regresses to full-return targets. The main limitation is weak generalization, largely due to noisy event snapshots (e.g., player locations misaligned with ball start/end). Beyond loss, inspecting action values for a fixed state provides more meaningful signal."
         ],
-        "figures": [
+        "inlineFigures": [
           {
-            "src": "assets/img/projects/socceriq-function/SoccerIQ-Arch.png",
-            "alt": "SoccerIQ architecture diagram",
-            "caption": "Figure 1: SoccerIQ architecture with parallel state and action encoders feeding the Q-head.",
-            "wide": true
+            "afterParagraph": 0,
+            "figure": {
+              "src": "assets/img/projects/socceriq-function/SoccerIQ-Arch.png",
+              "alt": "SoccerIQ architecture diagram",
+              "caption": "Figure 1: SoccerIQ architecture with parallel state and action encoders feeding the Q-head.",
+              "wide": true
+            }
           }
         ],
         "tables": [
@@ -139,6 +162,61 @@
                 "0.81"
               ]
             ]
+          }
+        ]
+      },
+      {
+        "title": "Results and Discussion",
+        "paragraphs": [
+          "Figure 2 shows three examples of model outputs for passing, where the heatmap reflects the predicted reward of passing into each cell. In a mid-block possession state (left), the model highlights the open right flank and downweights the crowded central lane. In a last-phase state just outside the box (middle), it recognizes congestion inside the area and favors space on the periphery. In a build-up state (right), it again flags open wide zones. Across all three, the model assigns high reward to backward passes, which may reflect a learned preference for retaining possession or a bias from the data. Another recurring pattern is lower reward in last-phase contexts, even though optimal decisions near goal should, in theory, be the most valuable; at this point we cannot tell whether this is strategic signal or artifact. During testing, meaningful examples were scarce because many snapshots were incomplete or incoherent, and the model struggled with complex states; richer context consistently produced more interpretable heatmaps.",
+          "Figure 3 shows dribble evaluation as a 5m x 5m neighborhood heatmap around the ball. This is the weakest part of the model: the surfaces lack clear guidance about when or where to dribble. We suspect the training data under-represents dribble sequences with high reward, with most positive trajectories coming from pass-to-shot chains, which leaves the model without enough signal to learn coherent dribble value.",
+          "The results demonstrate that direct Q-function approximation via deep networks can capture some meaningful spatial patterns in soccer, but also highlight key challenges in data quality, representation, and evaluation. Compared to existing value-based approaches (e.g., VAEP or EPV), our model offers an end-to-end estimate of action values, yet struggles with generalization and nuanced decision-making. Our TD(0) estimator achieved low temporal-difference error on held-out data, indicating successful fitting of the Bellman equation, whereas the Monte Carlo baseline suffered high variance and poorer generalization. The generated pass-reward heatmaps sometimes highlight open space, mirroring SoccerMap's spatial awareness, but also occasionally prioritize backward passes in high-reward scenarios, suggesting the model learned a \"safe play\" bias rather than true offensive value.",
+          "Assuming we had more time and access to a higher-resolution dataset, we would have been interested in further refining our approach. First, we wished we could have conducted a more thorough analysis of our model to determine whether our Q-learning method captured more of the nuances of the game. Additionally, we suspect our approach was highly sensitive to data quality, and we did not allot enough time to clean the data. Finally, we ignored the defensive action space available to the out-of-possession team; analyzing this adjacent but different domain may reveal interesting patterns."
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 0,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/socceriq-function/event_10_hmap.png",
+                  "alt": "Pass reward heatmap for event 10"
+                },
+                {
+                  "src": "assets/img/projects/socceriq-function/event_21_hmap.png",
+                  "alt": "Pass reward heatmap for event 21"
+                },
+                {
+                  "src": "assets/img/projects/socceriq-function/event_33_hmap.png",
+                  "alt": "Pass reward heatmap for event 33"
+                }
+              ],
+              "caption": "Figure 2: Three examples of a game state and their respective Q-value heatmaps for pass reward. Green dots are teammates, red triangles are opponents, and the white dot is the ball.",
+              "wide": true,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 1,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/socceriq-function/dribble_10_hmap.png",
+                  "alt": "Dribble reward heatmap for event 10"
+                },
+                {
+                  "src": "assets/img/projects/socceriq-function/dribble_21_hmap.png",
+                  "alt": "Dribble reward heatmap for event 21"
+                },
+                {
+                  "src": "assets/img/projects/socceriq-function/dribble_33_hmap.png",
+                  "alt": "Dribble reward heatmap for event 33"
+                }
+              ],
+              "caption": "Figure 3: Three examples of a game state and their respective Q-value heatmaps for dribbling within a 5m x 5m neighborhood. Green dots are teammates, red triangles are opponents, and the X mark is the ball.",
+              "wide": true,
+              "noBorder": true
+            }
           }
         ]
       }

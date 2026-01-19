@@ -21,7 +21,10 @@
     {
       "label": "Repo",
       "href": "https://github.com/",
-      "kind": "primary"
+      "kind": "primary",
+      "icon": "assets/img/github_logo.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
     },
     {
       "label": "Report (PDF)",

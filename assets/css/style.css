@@ -262,6 +262,30 @@ a:hover{ text-decoration: none; }
   border-radius: 14px;
   font-size: 0.92rem;
 }
+.btn--icon{
+  padding: 10px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.btn__icon{
+  width: 22px;
+  height: 22px;
+  display: block;
+}
+.btn__icon--lg{
+  width: 30px;
+  height: 30px;
+}
+.btn__icon--dark{
+  display: none;
+}
+.theme-dark .btn__icon--light{
+  display: none;
+}
+.theme-dark .btn__icon--dark{
+  display: block;
+}
 .btn.is-active{
   border-color: var(--line);
   background: var(--panel2);
@@ -274,9 +298,36 @@ a:hover{ text-decoration: none; }
 }
 .intro{ padding: 6px 0; }
 .intro__head{
-  display:block;
+  display:grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: center;
 }
 .intro__copy{ padding-top: 2px; max-width: 70ch; }
+.intro__media{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.intro__photo-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap: 10px;
+}
+.intro__photo{
+  width: 300px;
+  height: 360px;
+  border-radius: 16px;
+  object-fit: cover;
+  background: transparent;
+}
+.intro__links{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
 
 
 .profile{
@@ -500,11 +551,25 @@ a:hover{ text-decoration: none; }
   pointer-events: none;
   z-index: 1;
 }
+.hero-overlay--drone{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: min(140px, 16vw);
+  z-index: 0;
+  opacity: 1;
+}
 .hero-overlay--walk{
   animation: hero-walk-in 7s linear 1;
 }
 .hero-overlay--walk.hero-overlay--loop{
   animation: hero-walk-loop 12s linear infinite;
+}
+.hero-overlay--fast.hero-overlay--walk{
+  animation-duration: 3.5s;
+}
+.hero-overlay--fast.hero-overlay--walk.hero-overlay--loop{
+  animation-duration: 6s;
 }
 .hero-overlay img{
   width: 100%;
@@ -523,6 +588,9 @@ a:hover{ text-decoration: none; }
     display: block;
     margin: 12px 0 0 auto;
     width: min(180px, 40vw);
+  }
+  .hero-overlay--drone{
+    display: none;
   }
   .hero-overlay--walk{
     animation: none;
@@ -858,8 +926,22 @@ a:hover{ text-decoration: none; }
   width: 100%;
   height: 100%;
   display: block;
+  object-fit: cover;
+  object-position: center;
+  background: transparent;
+}
+.proj[data-slug="soccer-pass-forecast"] .proj__thumb,
+.proj[data-slug="socceriq-function"] .proj__thumb,
+.proj[data-slug="particle-filter-slam"] .proj__thumb{
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+.proj[data-slug="soccer-pass-forecast"] .proj__thumb img,
+.proj[data-slug="socceriq-function"] .proj__thumb img,
+.proj[data-slug="particle-filter-slam"] .proj__thumb img{
   object-fit: contain;
-  background: var(--panel2);
+  background: transparent;
 }
 .proj__top{
   display:flex;

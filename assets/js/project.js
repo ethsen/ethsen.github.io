@@ -98,7 +98,7 @@ function renderProjectCard(p) {
   const meta = badges.length ? el("div", { class: "proj__meta" }, badges) : null;
   const top = el("div", { class: "proj__top" }, meta ? [title, meta] : [title]);
 
-  const card = el("article", { class: "card proj" }, [
+  const card = el("article", { class: "card proj", "data-slug": p.slug || "" }, [
     thumb,
     top,
     desc
@@ -229,15 +229,34 @@ function renderLinks(links) {
     if (!href) return;
 
     const isExternal = href.startsWith("https://");
-    wrap.appendChild(
-      el("a", {
-        class: "btn btn--small " + (l.kind === "primary" ? "" : "btn--ghost"),
-        href,
-        target: isExternal ? "_blank" : "_self",
-        rel: isExternal ? "noreferrer" : "",
-        text: l.label || "link"
-      })
-    );
+    const className = "btn btn--small "
+      + (l.kind === "primary" ? "" : "btn--ghost")
+      + (l.iconOnly ? " btn--icon" : "");
+    const attrs = {
+      class: className,
+      href,
+      target: isExternal ? "_blank" : "_self",
+      rel: isExternal ? "noreferrer" : ""
+    };
+    if (l.iconOnly && l.label) {
+      attrs["aria-label"] = l.label;
+      attrs.title = l.label;
+    }
+
+    const children = [];
+    if (l.icon) {
+      children.push(el("img", {
+        class: "btn__icon",
+        src: assetUrl(l.icon),
+        alt: l.iconOnly ? "" : (l.iconAlt || l.label || "icon"),
+        loading: "lazy"
+      }));
+    }
+    if (!l.iconOnly) {
+      children.push(el("span", { class: "btn__text", text: l.label || "link" }));
+    }
+
+    wrap.appendChild(el("a", attrs, children));
   });
 }
 
@@ -309,6 +328,31 @@ function assetUrl(src) {
   if (src.startsWith("http://") || src.startsWith("https://")) return src;
   const clean = src.replace(/^\//, "");
   return getBasePath() + clean;
+}
+
+function startRandomOverlay(node, opts = {}) {
+  if (!node || typeof window === "undefined") return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (window.matchMedia("(max-width: 900px)").matches) return;
+
+  const padding = Number(opts.padding) || 24;
+  const minDuration = Number(opts.minDuration) || 10;
+  const maxDuration = Number(opts.maxDuration) || 18;
+
+  const move = () => {
+    const rect = node.getBoundingClientRect();
+    const maxX = Math.max(0, window.innerWidth - rect.width - padding);
+    const maxY = Math.max(0, window.innerHeight - rect.height - padding);
+    const x = padding + Math.random() * maxX;
+    const y = padding + Math.random() * maxY;
+    const duration = minDuration + Math.random() * (maxDuration - minDuration);
+    node.style.transition = `transform ${duration}s linear`;
+    node.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+  };
+
+  node.addEventListener("transitionend", move);
+  window.addEventListener("resize", move);
+  move();
 }
 
 let galleryIdCounter = 0;
@@ -618,15 +662,21 @@ async function initProjectPage() {
   if (hero) {
     hero.querySelectorAll(".hero-overlay").forEach(node => node.remove());
     if (p.heroOverlay?.src) {
+      const useDark = document.documentElement.classList.contains("theme-dark");
+      const overlaySrc = (!useDark && p.heroOverlay.srcDark) ? p.heroOverlay.srcDark : p.heroOverlay.src;
       const overlayImg = el("img", {
-        src: assetUrl(p.heroOverlay.src),
+        src: assetUrl(overlaySrc),
         alt: p.heroOverlay.alt || ""
       });
       const overlayClasses = ["hero-overlay"];
       if (p.heroOverlay.animate) overlayClasses.push("hero-overlay--walk");
+      if (p.heroOverlay.speed === "fast") overlayClasses.push("hero-overlay--fast");
+      if (p.heroOverlay.motion === "random") overlayClasses.push("hero-overlay--drone");
       const overlay = el("figure", { class: overlayClasses.join(" ") }, [overlayImg]);
       hero.appendChild(overlay);
-      if (p.heroOverlay.animate) {
+      if (p.heroOverlay.motion === "random") {
+        startRandomOverlay(overlay, p.heroOverlay.motionOptions || {});
+      } else if (p.heroOverlay.animate) {
         overlay.addEventListener("animationend", () => {
           overlay.classList.add("hero-overlay--loop");
         }, { once: true });

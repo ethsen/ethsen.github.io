@@ -20,7 +20,10 @@
     {
       "label": "Repo",
       "href": "https://github.com/ethsen/adv-vision-final-proj",
-      "kind": "primary"
+      "kind": "primary",
+      "icon": "assets/img/github_logo.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
     },
     {
       "label": "Report (PDF)",

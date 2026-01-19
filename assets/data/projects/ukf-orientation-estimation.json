@@ -1,0 +1,72 @@
+{
+  "slug": "ukf-orientation-estimation",
+  "title": "Unscented Kalman Filtering for 3D Orientation Estimation",
+  "subtitle": "Quaternion UKF with IMU calibration and Vicon ground truth",
+  "summary": "Implemented a quaternion-based UKF for 3D orientation estimation from raw IMU data, with a full sensor calibration pipeline and Vicon-based evaluation.",
+  "kicker": "robotics",
+  "year": 2025,
+  "featured": false,
+  "thumbnail": "assets/img/projects/ukf-orientation-estimation/thumbnail.png",
+  "tags": [
+    "robotics",
+    "state estimation",
+    "sensor fusion"
+  ],
+  "tech": [
+    "Python",
+    "NumPy"
+  ],
+  "heroOverlay": {
+    "src": "assets/img/projects/ukf-orientation-estimation/drone.png",
+    "alt": "Drone overlay",
+    "animate": true,
+    "speed": "fast"
+  },
+  "glance": {
+    "oneLiner": "Quaternion UKF for IMU-only 3D orientation tracking with Vicon-calibrated sensors.",
+    "problem": "Estimate 3D orientation from noisy, bias-ridden IMU measurements on a nonlinear rotation manifold, using Vicon ground truth for calibration and evaluation.",
+    "approach": "Calibrate accelerometer and gyroscope from raw ADC counts, represent orientation as a unit quaternion with covariance in the tangent space, and propagate sigma points through nonlinear dynamics and measurement models.",
+    "results": "Produces stable orientation estimates that track Vicon ground truth when calibration is correct; highlights the importance of bias/sensitivity estimation and quaternion-aware statistics.",
+    "takeaways": [
+      "Calibration quality dominates downstream orientation accuracy.",
+      "Quaternion-aware averaging is essential for consistent UKF updates.",
+      "Visualization is critical for diagnosing drift and sign/axis errors."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "paragraphs": [
+          "This project implements an Unscented Kalman Filter (UKF) to estimate the 3D orientation of a rigid body using raw IMU data. The IMU provides tri-axial accelerometer and gyroscope measurements, while high-accuracy Vicon motion capture data serves as ground truth for calibration and evaluation.",
+          "Orientation lives on a non-Euclidean manifold, so the filter uses quaternions and a tangent-space covariance. The dataset provides irregularly sampled IMU readings and synchronized Vicon rotations, which are used to align axes, correct sign conventions, and validate the filter output."
+        ]
+      },
+      {
+        "title": "Sensor Calibration",
+        "paragraphs": [
+          "Raw IMU measurements arrive as ADC counts, so both accelerometer and gyroscope channels require calibration before filtering. We use a linear calibration model with per-axis bias and sensitivity parameters to map raw counts into physical units.",
+          "Accelerometer calibration enforces gravity magnitude consistency and validates roll/pitch against Vicon-derived angles. Gyroscope calibration compares differentiated Vicon orientation with raw angular velocities to estimate bias and scale, which is critical for controlling drift over time.",
+          "Calibration parameters are learned on a training sequence and fixed for evaluation on held-out data. This step dominates overall performance and is the most common source of failure when axes or sign conventions are mismatched."
+        ]
+      },
+      {
+        "title": "Estimation of Rotation",
+        "paragraphs": [
+          "The UKF state is composed of a unit quaternion for orientation and a 3D angular velocity vector. Because quaternions are constrained to unit norm, uncertainty is represented in a 6D tangent space rather than the full 7D state.",
+          "Sigma points are generated from the covariance via a matrix square root, mapped into axis-angle perturbations for the quaternion component, and applied through quaternion multiplication. Angular velocity updates are additive in Euclidean space.",
+          "To compute the mean orientation, we iteratively average relative quaternion errors in axis-angle form until convergence. This yields a valid mean quaternion and covariance estimate compatible with UKF updates.",
+          "The measurement model combines accelerometer-derived gravity direction with gyroscope angular velocity. Sigma points are passed through this model to compute predicted measurement statistics, which drive the Kalman update using cross-covariance terms."
+        ]
+      },
+      {
+        "title": "Results and Discussion",
+        "paragraphs": [
+          "The filter produces stable orientation estimates that closely track Vicon ground truth when calibration is correct and noise parameters are well tuned. Euler-angle plots are especially useful for spotting axis flips, timing misalignment, or gyro scale errors.",
+          "The main sensitivity is calibration quality: small gyroscope scale errors cause rapid drift, while accelerometer bias errors distort gravity alignment. Quaternion-aware averaging and careful uncertainty propagation are essential for consistency on the rotation manifold.",
+          "Overall, this project reinforced the importance of geometric state representations, sensor calibration pipelines, and visualization-driven debugging for nonlinear state estimation in robotics."
+        ]
+      }
+    ]
+  }
+}
