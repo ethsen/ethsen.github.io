@@ -97,7 +97,9 @@
       pausedPagerId = pagerId;
     }
     const figure = img.closest("figure");
-    const captionText = figure?.querySelector("figcaption")?.textContent?.trim() || "";
+    const captionText = img.dataset.lightboxCaption === "none"
+      ? ""
+      : (figure?.querySelector("figcaption")?.textContent?.trim() || "");
     lightboxState.img.src = img.currentSrc || img.src;
     lightboxState.img.alt = img.alt || "Gallery image";
     lightboxState.caption.textContent = captionText;
@@ -124,7 +126,7 @@
   };
 
   const bindLightboxImages = () => {
-    const galleryImages = document.querySelectorAll(".about img, #about-gallery img");
+    const galleryImages = document.querySelectorAll(".about img, #about-gallery img, .proj-body img");
     if (!galleryImages.length) return;
 
     galleryImages.forEach(img => {
@@ -132,6 +134,7 @@
       if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
       if (img.dataset.lightboxBound) return;
       img.dataset.lightboxBound = "true";
+      if (img.closest(".proj-body")) img.dataset.lightboxCaption = "none";
       img.setAttribute("tabindex", "0");
       img.setAttribute("role", "button");
       img.addEventListener("click", () => openLightbox(img));
@@ -146,4 +149,5 @@
 
   ensureLightbox();
   bindLightboxImages();
+  window.bindLightboxImages = bindLightboxImages;
 })();

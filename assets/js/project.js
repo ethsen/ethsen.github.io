@@ -81,7 +81,9 @@ function renderChips(tags) {
 }
 
 function renderProjectCard(p) {
-  const featured = p.featured ? el("span", { class: "badge", text: "featured" }) : el("span", { class: "badge", text: p.year ? String(p.year) : "project" });
+  const badges = [];
+  if (p.featured) badges.push(el("span", { class: "badge", text: "featured" }));
+  if (p.year) badges.push(el("span", { class: "badge", text: String(p.year) }));
 
   const thumb = el("a", { class: "proj__thumb", href: projectUrl(p.slug, "glance") }, [
     el("img", { src: projectThumb(p), alt: p.title ? `Thumbnail for ${p.title}` : "Project thumbnail", loading: "lazy" })
@@ -93,7 +95,8 @@ function renderProjectCard(p) {
 
   const desc = el("p", { class: "proj__desc", text: p.summary || "" });
 
-  const top = el("div", { class: "proj__top" }, [title, featured]);
+  const meta = badges.length ? el("div", { class: "proj__meta" }, badges) : null;
+  const top = el("div", { class: "proj__top" }, meta ? [title, meta] : [title]);
 
   const card = el("article", { class: "card proj" }, [
     thumb,
@@ -245,10 +248,25 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
   if (title) block.appendChild(el(headingTag, { text: title }));
 
   const paraEls = [];
-  paragraphs.filter(Boolean).forEach(p => {
+  const inlineFigures = Array.isArray(opts.inlineFigures) ? opts.inlineFigures : null;
+  const inlineMap = new Map();
+  if (inlineFigures) {
+    inlineFigures.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number" || !entry.figure) return;
+      if (!inlineMap.has(entry.afterParagraph)) inlineMap.set(entry.afterParagraph, []);
+      inlineMap.get(entry.afterParagraph).push(entry.figure);
+    });
+  }
+  paragraphs.filter(Boolean).forEach((p, idx) => {
     const node = el("p", { text: p });
     paraEls.push(node);
     block.appendChild(node);
+    if (inlineMap.has(idx)) {
+      inlineMap.get(idx).forEach(fig => {
+        const figNode = renderFigure(fig);
+        if (figNode) block.appendChild(figNode);
+      });
+    }
   });
 
   if (opts.lede && paraEls.length) {
@@ -455,6 +473,39 @@ function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures 
   const block = renderBlock(title, paragraphs, bullets, opts);
   const hasFigures = Array.isArray(figures) && figures.length;
   const hasAfterFirst = Array.isArray(opts.afterFirstFigureParagraphs) && opts.afterFirstFigureParagraphs.length;
+  const inlineAfterParagraphFigures = Array.isArray(opts.inlineAfterParagraphFigures)
+    ? opts.inlineAfterParagraphFigures
+    : null;
+  const afterParaMap = new Map();
+  if (inlineAfterParagraphFigures) {
+    inlineAfterParagraphFigures.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number" || !entry.figure) return;
+      if (!afterParaMap.has(entry.afterParagraph)) afterParaMap.set(entry.afterParagraph, []);
+      afterParaMap.get(entry.afterParagraph).push(entry.figure);
+    });
+  }
+
+  if (Array.isArray(opts.inlineFigures) && opts.inlineFigures.length) {
+    if (opts.tablesBeforeFigures) {
+      const tbls = renderTables(tables);
+      if (tbls) block.appendChild(tbls);
+    }
+    if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
+      opts.afterTableParagraphs.filter(Boolean).forEach(p => {
+        block.appendChild(el("p", { text: p }));
+      });
+    }
+    if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
+      opts.afterParagraphs.filter(Boolean).forEach(p => {
+        block.appendChild(el("p", { text: p }));
+      });
+    }
+    if (!opts.tablesBeforeFigures) {
+      const tbls = renderTables(tables);
+      if (tbls) block.appendChild(tbls);
+    }
+    return block;
+  }
 
   if (hasFigures && hasAfterFirst) {
     const first = renderFigure(figures[0]);
@@ -479,8 +530,14 @@ function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures 
   }
 
   if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
-    opts.afterParagraphs.filter(Boolean).forEach(p => {
+    opts.afterParagraphs.filter(Boolean).forEach((p, idx) => {
       block.appendChild(el("p", { text: p }));
+      if (afterParaMap.has(idx)) {
+        afterParaMap.get(idx).forEach(fig => {
+          const figNode = renderFigure(fig);
+          if (figNode) block.appendChild(figNode);
+        });
+      }
     });
   }
 
@@ -654,7 +711,9 @@ async function initProjectPage() {
               afterParagraphs: s.afterParagraphs || null,
               afterFirstFigureParagraphs: s.afterFirstFigureParagraphs || null,
               afterTableParagraphs: s.afterTableParagraphs || null,
-              tablesBeforeFigures: Boolean(s.tablesBeforeFigures)
+              tablesBeforeFigures: Boolean(s.tablesBeforeFigures),
+              inlineFigures: s.inlineFigures || null,
+              inlineAfterParagraphFigures: s.inlineAfterParagraphFigures || null
             }
           ));
         });
@@ -673,6 +732,7 @@ async function initProjectPage() {
       }
     }
     typesetMath(body);
+    if (typeof window.bindLightboxImages === "function") window.bindLightboxImages();
   };
 
   renderView(view);

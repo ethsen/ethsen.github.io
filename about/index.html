@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>About | Ethan Senatore</title>
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem("theme");
+        const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+        const isDark = stored ? stored === "dark" : prefersDark;
+        document.documentElement.classList.toggle("theme-dark", isDark);
+      } catch {
+        // Ignore storage failures.
+      }
+    })();
+  </script>
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/style.css" />
   <script defer src="../assets/js/main.js"></script>
