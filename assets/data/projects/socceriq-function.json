@@ -1,0 +1,147 @@
+{
+  "slug": "socceriq-function",
+  "title": "SoccerIQ-Function: Offline Q-Function Evaluation for Estimating Soccer Action Rewards",
+  "subtitle": "Offline evaluation of long-horizon action value from historical match data",
+  "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
+  "kicker": "sports analytics",
+  "year": 2025,
+  "featured": true,
+  "tags": [
+    "sports",
+    "reinforcement learning",
+    "deep learning"
+  ],
+  "tech": [
+    "Python",
+    "PyTorch"
+  ],
+  "glance": {
+    "oneLiner": "Offline Q-function evaluation for attributing long-horizon reward to soccer actions.",
+    "problem": "Short-term outcomes often miss the value of actions that create future chances, so we need a way to estimate long-term reward from historical, policy-generated data.",
+    "approach": "Represent the state as a spatial image of players and ball, encode actions with discrete type and continuous targets, and learn a Q-network that predicts expected return from state-action pairs.",
+    "results": "Ongoing: initial focus is on building a scalable pipeline to evaluate action value without online interaction."
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "paragraphs": [
+          "Modeling soccer is challenging because the game is fluid, strategic, and shaped by many subtle choices. Actions that seem minor in isolation can create goal-scoring chances several steps later, so evaluating long-term value is essential for tactical and player analysis. At the elite level, even small analytical advantages can influence results and transfer decisions, which is why clubs such as FC Barcelona invest heavily in data-driven research.",
+          "A core difficulty in applying reinforcement learning to soccer is defining useful state and action representations in a continuous, multi-agent setting. We address this with offline Q-function evaluation, which estimates the expected return of actions taken by the behavior policy using historical data rather than online interaction. We approximate the Q-function with a neural network that combines spatial state images (player and ball positions processed by a CNN) with structured action features (one-hot action type plus continuous targets processed by an FCNN). The resulting embeddings feed a Q-network that predicts expected return for each state-action pair."
+        ]
+      },
+      {
+        "title": "Approach",
+        "paragraphs": [
+          "We frame offline policy evaluation in soccer as supervised regression on the action-value function $Q^\\pi(s,a)$, training a neural network to estimate expected return from historical trajectories. The method has three components: Q-function approximation with different return estimators, structured state/action representations, and possession-based trajectory segmentation with shaped rewards tailored to soccer dynamics.",
+          "To estimate $Q^\\pi(s,a)$, we learn a neural approximator $\\hat{Q}(s,a;\\mathbf{w})$ from triplets $(s,a,\\text{target})$ by minimizing squared error, $$\\mathcal{L}(\\mathbf{w}) = (\\hat{Q}(s,a;\\mathbf{w})-\\text{target})^2,$$ optimized with SGD or Adam over offline trajectories from a behavior policy $\\pi$. We compare two target choices: Monte Carlo returns, $$G_t=\\sum_{k=0}^T \\gamma^k R_{t+k+1},$$ which are unbiased but high-variance, and TD(0) targets, $$R_{t+1}+\\gamma\\hat{Q}(s_{t+1},a_{t+1};\\mathbf{w}),$$ which reduce variance at the cost of bias early in training.",
+          "State representations adapt SoccerMap-style spatial encodings using a $104\\times 68$ grid with four channels: attacker positions, defender positions, and dense distance/angle maps to the ball. Actions combine a discrete one-hot type (\u201cpass,\u201d \u201cdribble,\u201d \u201cshot\u201d) with continuous coordinates: $(x_{\\text{start}},y_{\\text{start}},x_{\\text{end}},y_{\\text{end}})$ for passes/dribbles, and only the start location for shots with zeros elsewhere. A CNN encodes the state tensor and an FCNN encodes the action vector; their embeddings are concatenated and fed to the Q-network to predict $Q^\\pi(s,a)$.",
+          "We define a trajectory as a single uninterrupted possession, starting when a team gains control and ending on loss of possession, a missed shot, or a goal. Because goals are rare, we use shaped terminal rewards to provide denser learning signals: +100 for a goal, +20 for a shot on target, +10 for a shot off target, -10 for losing the ball in the opponent's half, and -20 for losing it in the defending half. This design emphasizes action quality even when goals are infrequent."
+        ]
+      },
+      {
+        "title": "Numerical Experiments",
+        "paragraphs": [
+          "Experiments were trained on a GTX 4090, and the implementation is available at https://github.com/IgnacioBoero/Soccer.",
+          "We use StatsBomb 360 tracking and event data covering 292 matches and over one million events. Events are converted to SPADL format for vectorization, then filtered to passes, dribbles, crosses, and shots. The 360 tracking is derived from broadcast video, which makes it accessible but lower fidelity than 10 Hz tracking; missing players and inconsistent state snapshots are common, and access to higher-resolution data is limited. A compact overview of the model architecture appears in Figure 1.",
+          "To minimize distribution shift, we shuffle events across all trajectories and split 80% train / 20% validation. The dataset is sharded and streamed with an iterative loader. Input features are normalized using training-set mean and standard deviation, and target returns are normalized as well.",
+          "Regularization includes $\\ell_2$ weight decay ($10^{-6}$ to $10^{-3}$), dropout in both encoders and the Q-head ($p_{\\text{drop}}$ in $[0,0.20]$), gradient clipping at 1.0, a frozen TD(0) target network updated every 2000 iterations, and early stopping after three epochs without validation improvement.",
+          "We run Optuna with 64 trials per method over the grid-search space in Table 1; best configurations and losses are shown in Table 2. TD(0) reaches 0.08 training loss and 0.12 validation loss, while Monte Carlo reaches 0.56 and 0.81, with a larger generalization gap. Losses are not directly comparable across methods because TD(0) measures Bellman consistency, $Q(s,a)-[r+Q(s',a')]$, whereas Monte Carlo regresses to full-return targets. The main limitation is weak generalization, largely due to noisy event snapshots (e.g., player locations misaligned with ball start/end). Beyond loss, inspecting action values for a fixed state provides more meaningful signal."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/socceriq-function/SoccerIQ-Arch.png",
+            "alt": "SoccerIQ architecture diagram",
+            "caption": "Figure 1: SoccerIQ architecture with parallel state and action encoders feeding the Q-head.",
+            "wide": true
+          }
+        ],
+        "tables": [
+          {
+            "title": "Table 1: Hyper-parameter search space explored during optimization.",
+            "columns": [
+              "Hyper-parameter",
+              "Search space"
+            ],
+            "rows": [
+              [
+                "Learning rate $\\eta$",
+                "$\\log U\\!\\bigl(5\\times10^{-5},\\,10^{-3}\\bigr)$"
+              ],
+              [
+                "Weight decay $\\lambda$",
+                "$\\log U\\!\\bigl(10^{-6},\\,10^{-3}\\bigr)$"
+              ],
+              [
+                "Batch size $B$",
+                "$\\{32,\\,64,\\,128\\}$"
+              ],
+              [
+                "Number of hidden layers $L$",
+                "$\\{2,\\,3,\\,4,\\,5\\}$"
+              ],
+              [
+                "Hidden dimension $h$",
+                "$\\{64,\\,128,\\,256\\}$"
+              ],
+              [
+                "Dropout rate $p_{\\text{drop}}$",
+                "$\\{0.00,\\,0.05,\\,0.10,\\,0.15,\\,0.20\\}$"
+              ]
+            ]
+          },
+          {
+            "title": "Table 2: Best hyperparameter configurations and performance.",
+            "columns": [
+              "Hyperparameter",
+              "TD(0)",
+              "Monte Carlo"
+            ],
+            "rows": [
+              [
+                "Learning rate ($\\eta$)",
+                "$3.2\\times10^{-4}$",
+                "$6.7\\times10^{-4}$"
+              ],
+              [
+                "Weight decay ($\\lambda$)",
+                "$2.5\\times10^{-5}$",
+                "$4.1\\times10^{-6}$"
+              ],
+              [
+                "Batch size ($B$)",
+                "64",
+                "128"
+              ],
+              [
+                "Number of hidden layers ($L$)",
+                "3",
+                "4"
+              ],
+              [
+                "Hidden dimension ($h$)",
+                "128",
+                "256"
+              ],
+              [
+                "Dropout rate ($p_{\\text{drop}}$)",
+                "0.10",
+                "0.05"
+              ],
+              [
+                "Training loss",
+                "0.08",
+                "0.56"
+              ],
+              [
+                "Validation loss",
+                "0.12",
+                "0.81"
+              ]
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

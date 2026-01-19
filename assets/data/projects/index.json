@@ -36,6 +36,24 @@
         "PyTorch",
         "StatsBomb"
       ]
+    },
+    {
+      "slug": "socceriq-function",
+      "title": "SoccerIQ-Function: Offline Q-Function Evaluation for Estimating Soccer Action Rewards",
+      "subtitle": "Offline evaluation of long-horizon action value from historical match data",
+      "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
+      "kicker": "sports analytics",
+      "year": 2025,
+      "featured": true,
+      "tags": [
+        "sports",
+        "reinforcement learning",
+        "deep learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch"
+      ]
     }
   ]
 }
