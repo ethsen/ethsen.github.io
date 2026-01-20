@@ -1,0 +1,108 @@
+{
+  "slug": "crazyflie-trajectory-planning",
+  "title": "CrazyFlie Trajectory Planning and Control in a Maze",
+  "subtitle": "Quadrotor controller, waypoint planner, and trajectory generation on real hardware",
+  "summary": "Deployed a full CrazyFlie 2.0 stack for stable hover, gain tuning, waypoint planning, and maze navigation with VICON tracking feedback.",
+  "kicker": "robotics",
+  "year": 2025,
+  "featured": false,
+  "thumbnail": "assets/img/projects/crazyflie-trajectory-planning/thumbnail.png",
+  "tags": [
+    "robotics",
+    "controls",
+    "planning"
+  ],
+  "tech": [],
+  "glance": {
+    "oneLiner": "Deployed a controller, waypoint planner, and trajectory generator on a CrazyFlie 2.0 to execute tuned maneuvers and autonomous maze traversal.",
+    "problem": "Ship a stable quadrotor control and planning stack to real hardware, tune gains safely, and validate end-to-end flight through a cluttered maze environment.",
+    "approach": "Two lab sessions: first, tune hover and lateral gains with step responses and validate with a box maneuver and custom waypoint patterns; second, integrate occupancy-map margins and trajectory planning to navigate a maze.",
+    "results": "Achieved stable hover, refined gains for aggressive trajectories, and demonstrated successful maze navigation with smooth path execution.",
+    "takeaways": [
+      "Hardware tuning enables more aggressive, reliable trajectories than conservative sim settings.",
+      "VICON feedback provides clean state estimates for tuning and validation.",
+      "Occupancy map margins matter for safe path execution in tight spaces."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "System Overview",
+        "paragraphs": [
+          "This project documents a two-session lab where my team of five deployed a quadrotor controller, waypoint planner, and trajectory generator on real hardware.",
+          "In the first session, we brought the CrazyFlie 2.0 stack online, verified stable hover, and tuned gains with step responses in $z$ and then $x/y$. We validated the controller on a box maneuver and then authored custom waypoints to fly a rectangular spiral before landing.",
+          "In the second session, we pushed the full stack through a maze by planning and executing trajectories. That meant revisiting gains and tightening occupancy-map margins to keep the vehicle safe while still moving quickly. By the end, we showed reliable control and path execution, with hardware tuning enabling more aggressive, smooth flight in cluttered space.",
+          "The CrazyFlie 2.0 itself is tracked by a VICON motion-capture system using reflective markers. VICON provides position and orientation, while onboard accelerometer and gyroscope data are radioed to the lab computers. Our controller runs there, computes desired states, and sends motor commands back to the quadrotor."
+        ]
+      },
+      {
+        "title": "Methods",
+        "paragraphs": [
+          "We used a geometric nonlinear controller that orients the quadrotor body $z$-axis along the desired thrust direction, which supports aggressive maneuvers but requires careful gain and damping tuning. Following the Project 1.1 handout, we start with the PD position law:",
+          "$$\\ddot{r}^{des} = \\ddot{r}_T - K_d(\\dot{r}-\\dot{r}_T) - K_p(r-r_T).$$",
+          "To generate the desired acceleration, the inputs $u_1$ and $u_2$ satisfy:",
+          "$$m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\mg\\end{bmatrix} = u_1 R \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}.$$",
+          "The left-hand side is the desired force plus gravity, so we define:",
+          "$$F^{des} = m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}, \\quad u_1 = R\\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}F^{des}.$$",
+          "For $u_2$, we align the thrust vector with the desired body $z$-axis:",
+          "$$c_3^{des} = \\frac{F^{des}}{\\lVert F^{des} \\rVert}.$$",
+          "We then align the body $y$-axis with the desired yaw direction while maintaining orthogonality. Define:",
+          "$$a_\\psi = \\begin{bmatrix}\\cos\\psi_T\\\\\\sin\\psi_T\\\\0\\end{bmatrix}.$$",
+          "Then compute:",
+          "$$c_2^{des} = \\frac{c_3^{des}\\times a_\\psi}{\\lVert c_3^{des}\\times a_\\psi \\rVert}, \\quad R^{des} = \\begin{bmatrix}c_2^{des} \\times c_3^{des} & c_2^{des} & c_3^{des}\\end{bmatrix}.$$",
+          "The attitude and angular velocity errors are:",
+          "$$e_R = \\frac{1}{2}(R^{des^T}R - R^T R^{des})^\\vee, \\quad e_\\omega = \\omega - \\omega^{des}.$$",
+          "Finally, the moment command is:",
+          "$$u_2 = I(-K_R e_R - K_\\omega e_\\omega).$$",
+          "We tuned four gains in simulation and then finalized them during hardware tests. The values below are the diagonals of 3x3 gain matrices.",
+          "Intuitively, we treated $K_p$ as positional importance, $K_d$ as how quickly we converge to position, $K_R$ as orientation importance, and $K_\\omega$ as how quickly we converge to orientation. Hardware testing required scaling gains down by about 30%, and additional tuning across lab sessions addressed model mismatch, sim fidelity gaps, and controller implementation quirks."
+        ],
+        "tables": [
+          {
+            "title": "Finalized gain values after tuning.",
+            "columns": [
+              "Gain",
+              "Value",
+              "Units"
+            ],
+            "rows": [
+              [
+                "$K_p$",
+                "[2.45, 2.45, 10.5]",
+                "1/s^2"
+              ],
+              [
+                "$K_d$",
+                "[5.25, 5.25, 6.3]",
+                "1/s"
+              ],
+              [
+                "$K_R$",
+                "[1750, 1750, 140]",
+                "1/s^2"
+              ],
+              [
+                "$K_\\omega$",
+                "[175, 175, 105]",
+                "1/s"
+              ]
+            ]
+          }
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/crazyflie-trajectory-planning/stepy-plot.png",
+            "alt": "Step tuning test in y direction",
+            "caption": "Step tuning test in the y direction.",
+            "wide": false,
+            "scale": 0.8,
+            "noBorder": true
+          }
+        ],
+        "afterParagraphs": [
+          "The y-direction step test indicates a settling time around 2 s, a rise time around 1.1 s, steady-state error near 2%, and a damping ratio near 0.4. The response is underdamped and initially slow to settle, and we also observed a mismatch in the z-direction that was fixed by retuning in lab 2. Our tuning loop was straightforward: run a test, adjust gains, and repeat until performance stabilized."
+        ]
+      }
+    ]
+  }
+}

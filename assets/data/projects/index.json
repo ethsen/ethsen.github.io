@@ -76,6 +76,22 @@
       ]
     },
     {
+      "slug": "crazyflie-trajectory-planning",
+      "title": "CrazyFlie Trajectory Planning and Control in a Maze",
+      "subtitle": "Quadrotor controller, waypoint planner, and trajectory generation on real hardware",
+      "summary": "Deployed a full CrazyFlie 2.0 stack for stable hover, gain tuning, waypoint planning, and maze navigation with VICON tracking feedback.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/crazyflie-trajectory-planning/thumbnail.png",
+      "tags": [
+        "robotics",
+        "controls",
+        "planning"
+      ],
+      "tech": []
+    },
+    {
       "slug": "ukf-orientation-estimation",
       "title": "Unscented Kalman Filtering for 3D Orientation Estimation",
       "subtitle": "Quaternion UKF with IMU calibration and Vicon ground truth",
