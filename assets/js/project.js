@@ -377,6 +377,7 @@ function renderFigure(fig) {
       class: "pager__img",
       "data-pager-id": pagerId
     });
+    const frame = el("div", { class: "pager__frame" }, [img]);
     const updateImage = (index) => {
       const item = fig.pager[index];
       if (!item?.src) return;
@@ -417,7 +418,7 @@ function renderFigure(fig) {
       pagerAutoRegistry.set(pagerId, { pause: stopAuto, resume: startAuto });
     }
     const controls = el("div", { class: "gallery__controls gallery__controls--center gallery__controls--spacious" }, [prevBtn, nextBtn]);
-    media = el("div", {}, [img, controls]);
+    media = el("div", {}, [frame, controls]);
   } else if (Array.isArray(fig.gallery) && fig.gallery.length) {
     const trackId = `proj-gallery-${galleryIdCounter++}`;
     const trackAttrs = { class: "gallery__track" };

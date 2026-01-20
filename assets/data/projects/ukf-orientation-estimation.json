@@ -1,8 +1,8 @@
 {
   "slug": "ukf-orientation-estimation",
   "title": "Unscented Kalman Filtering for 3D Orientation Estimation",
-  "subtitle": "Quaternion UKF with IMU calibration and Vicon ground truth",
-  "summary": "Implemented a quaternion-based UKF for 3D orientation estimation from raw IMU data, with a full sensor calibration pipeline and Vicon-based evaluation.",
+  "subtitle": "Quaternion UKF with IMU calibration and motion-capture validation",
+  "summary": "Quaternion UKF for 3D attitude tracking from IMU data, with gravity-consistent accelerometer calibration, gyro scale/bias alignment to motion-capture ground truth, and manifold-aware estimation.",
   "kicker": "robotics",
   "year": 2025,
   "featured": false,
@@ -16,6 +16,16 @@
     "Python",
     "NumPy"
   ],
+  "links": [
+    {
+      "label": "Repo",
+      "href": "https://github.com/ethsen/EKF-UKF",
+      "kind": "primary",
+      "icon": "assets/img/github_logo.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
+    }
+  ],
   "heroOverlay": {
     "src": "assets/img/projects/ukf-orientation-estimation/drone.png",
     "alt": "Drone overlay",
@@ -23,14 +33,14 @@
     "speed": "fast"
   },
   "glance": {
-    "oneLiner": "Quaternion UKF for IMU-only 3D orientation tracking with Vicon-calibrated sensors.",
-    "problem": "Estimate 3D orientation from noisy, bias-ridden IMU measurements on a nonlinear rotation manifold, using Vicon ground truth for calibration and evaluation.",
-    "approach": "Calibrate accelerometer and gyroscope from raw ADC counts, represent orientation as a unit quaternion with covariance in the tangent space, and propagate sigma points through nonlinear dynamics and measurement models.",
-    "results": "Produces stable orientation estimates that track Vicon ground truth when calibration is correct; highlights the importance of bias/sensitivity estimation and quaternion-aware statistics.",
+    "oneLiner": "Quaternion UKF for IMU-only 3D orientation tracking with motion-capture calibration and validation.",
+    "problem": "Estimate 3D orientation from noisy, biased IMU measurements on a nonlinear rotation manifold, while using motion-capture ground truth to calibrate sensors and validate the filter.",
+    "approach": "I calibrated accelerometer and gyroscope axes with affine models, then ran a quaternion UKF that represents orientation uncertainty in a 3D tangent space and propagates sigma points through nonlinear dynamics and measurement models.",
+    "results": "The filter tracks motion-capture orientation closely when bias/scale are calibrated, and reveals drift or sign errors quickly through roll/pitch/yaw comparisons.",
     "takeaways": [
-      "Calibration quality dominates downstream orientation accuracy.",
-      "Quaternion-aware averaging is essential for consistent UKF updates.",
-      "Visualization is critical for diagnosing drift and sign/axis errors."
+      "Sensor calibration dominates orientation accuracy and drift behavior.",
+      "Quaternion-aware averaging is essential for valid UKF updates.",
+      "Axis conventions and sign flips are easy to miss without ground truth."
     ]
   },
   "deep": {
@@ -38,33 +48,165 @@
       {
         "title": "Introduction",
         "paragraphs": [
-          "This project implements an Unscented Kalman Filter (UKF) to estimate the 3D orientation of a rigid body using raw IMU data. The IMU provides tri-axial accelerometer and gyroscope measurements, while high-accuracy Vicon motion capture data serves as ground truth for calibration and evaluation.",
-          "Orientation lives on a non-Euclidean manifold, so the filter uses quaternions and a tangent-space covariance. The dataset provides irregularly sampled IMU readings and synchronized Vicon rotations, which are used to align axes, correct sign conventions, and validate the filter output."
+          "This work implements a quaternion-based Unscented Kalman Filter (UKF) for 3D attitude tracking using IMU measurements (accelerometer + gyroscope), with motion-capture orientations used offline as ground truth for calibration and validation.",
+          "The pipeline has two core components: sensor calibration from raw ADC units to physical units, and nonlinear state estimation on the quaternion manifold using an unscented transform with quaternion-consistent averaging."
         ]
       },
       {
-        "title": "Sensor Calibration",
+        "title": "Theoretical Breakdown",
         "paragraphs": [
-          "Raw IMU measurements arrive as ADC counts, so both accelerometer and gyroscope channels require calibration before filtering. We use a linear calibration model with per-axis bias and sensitivity parameters to map raw counts into physical units.",
-          "Accelerometer calibration enforces gravity magnitude consistency and validates roll/pitch against Vicon-derived angles. Gyroscope calibration compares differentiated Vicon orientation with raw angular velocities to estimate bias and scale, which is critical for controlling drift over time.",
-          "Calibration parameters are learned on a training sequence and fixed for evaluation on held-out data. This step dominates overall performance and is the most common source of failure when axes or sign conventions are mismatched."
+          "Sensor calibration starts from the affine conversion used for both accelerometer and gyroscope, $$\\text{value} = (\\text{raw} - \\text{bias})\\,\\frac{3300\\,\\text{mV}}{1023\\cdot \\text{sensitivity}}.$$ For the accelerometer, I treat the expected specific force as gravity in the body frame and compute $$\\mathbf{a}^{\\text{true}}_t = R_t\\,\\mathbf{g}, \\quad \\mathbf{g} = [0, 0, 9.81]^{\\top}\\,\\text{m/s}^2.$$ I then fit a per-axis linear model $a^{\\text{true}} \\approx x_0\\,a^{\\text{raw}} + x_1$ via least squares and recover $$\\text{sensitivity} = \\frac{3300\\,\\text{mV}}{1023\\,x_0}, \\quad \\text{bias} = -\\frac{x_1}{x_0}.$$ To reduce noise, I keep only samples with sufficient gravity projection per axis and validate calibration with roll/pitch estimates, $$\\hat{\\phi} = \\mathrm{atan2}(a_y, a_z), \\quad \\hat{\\theta} = \\mathrm{atan2}(-a_x, \\sqrt{a_y^2 + a_z^2}).$$",
+          "Table 1 summarizes the calibrated bias and sensitivity values used for both sensors. Keeping them explicit makes it clear how the affine conversion maps raw ADC counts into physical units.",
+          "Table 2 lists the per-dataset accelerometer thresholds used for least-squares fitting. These cutoffs suppress low-excitation regions and reduce the influence of noisy measurements in the bias/scale fit.",
+          "Gyroscope calibration uses motion-capture rotations to derive angular velocity. Given successive rotations, $$\\Delta R_t = R_{t+\\Delta} R_t^\\top,$$ I map $\\Delta R_t$ to a quaternion $q = (q_0, q_1, q_2, q_3)$, compute $$\\theta = 2\\,\\arccos(q_0), \\quad \\hat{\\mathbf{x}} = (q_1, q_2, q_3),$$ and approximate $$\\boldsymbol{\\omega}^{\\text{true}}_t \\approx \\frac{\\hat{\\mathbf{x}}\\,\\theta}{\\Delta t}.$$ I select $\\Delta t \\approx 0.15$ s to avoid noisy differentiation, then fit the same affine model and apply a unit conversion from deg/s to rad/s in the sensitivity term.",
+          "The UKF state is a unit quaternion orientation plus a 3D angular velocity, with uncertainty represented in a 6D tangent space. Sigma points are generated in this perturbation space, mapped to quaternions via axis--angle, and propagated using the measured time step with $$\\mathbf{q}_{t+\\Delta t} = \\mathbf{q}_t \\otimes \\delta\\mathbf{q}(\\boldsymbol{\\omega}\\Delta t).$$ Angular velocity is updated additively.",
+          "Quaternion means are computed by iterative error averaging: relative rotations are mapped to axis--angle errors, averaged, and applied until the mean error is small. This produces a valid mean orientation and a covariance consistent with the manifold.",
+          "The measurement combines accelerometer and gyroscope readings. Accelerometer prediction uses gravity in the body frame, $$\\hat{\\mathbf{a}}(\\mathbf{q}) \\approx \\mathbf{q}^{-1} \\otimes \\mathbf{g} \\otimes \\mathbf{q},$$ while the gyroscope measurement is direct angular velocity. The UKF update uses the predicted measurement mean and covariance to compute the Kalman gain and applies a multiplicative correction to the quaternion.",
+          "The Kalman update is performed in the tangent space. I compute the innovation and measurement covariance, $$\\mathbf{r} = \\mathbf{y}_{\\text{meas}} - \\hat{\\mathbf{y}}, \\quad \\mathbf{S} = \\mathrm{Cov}(\\mathbf{y}) + \\mathbf{Q},$$ and the gain $$\\mathbf{K} = \\mathbf{P}_{xy}\\mathbf{S}^{-1}.$$ The correction is $$\\delta\\mathbf{v} = \\mathbf{K}\\mathbf{r}, \\quad \\delta\\mathbf{v} = [\\delta\\boldsymbol{\\theta}, \\delta\\boldsymbol{\\omega}],$$ applied by $$\\mathbf{q} \\leftarrow \\delta\\mathbf{q}(\\delta\\boldsymbol{\\theta}) \\otimes \\mathbf{q}, \\quad \\boldsymbol{\\omega} \\leftarrow \\boldsymbol{\\omega} + \\delta\\boldsymbol{\\omega}.$$ The covariance update is $$\\mathbf{P} \\leftarrow \\mathbf{P} - \\mathbf{K}\\mathbf{S}\\mathbf{K}^\\top.$$",
+          "I set the initial covariance and noise as diagonal matrices: $\\Sigma$ uses ones on the diagonal for moderate initial uncertainty, $\\mathbf{Q}$ uses 0.1s to represent process/model noise, and $\\mathbf{R}$ uses 0.01s to represent measurement noise after calibration."
+        ],
+        "tables": [
+          {
+            "title": "Table 1: Calibrated parameters by axis. Bias is in raw ADC counts. Sensitivity is in mV/g for the accelerometer and mV/rad/s for the gyroscope.",
+            "columns": [
+              "Parameter",
+              "x",
+              "y",
+              "z"
+            ],
+            "rows": [
+              [
+                "Accelerometer bias",
+                "512.867",
+                "502.805",
+                "502.43"
+              ],
+              [
+                "Accelerometer sensitivity",
+                "32.959",
+                "32.932",
+                "33.568"
+              ],
+              [
+                "Gyroscope bias",
+                "373.077",
+                "373.144",
+                "369.7"
+              ],
+              [
+                "Gyroscope sensitivity",
+                "182.831",
+                "182.324",
+                "182.891"
+              ]
+            ]
+          },
+          {
+            "title": "Table 2: Accelerometer threshold values used for least-squares fitting (m/s^2).",
+            "columns": [
+              "Dataset",
+              "x-thresh",
+              "y-thresh",
+              "z-thresh"
+            ],
+            "rows": [
+              [
+                "1",
+                "1",
+                "1",
+                "1"
+              ],
+              [
+                "2",
+                "1",
+                "1",
+                "4.5"
+              ],
+              [
+                "3",
+                "5.9",
+                "6.3",
+                "6.7"
+              ]
+            ]
+          }
+        ],
+        "tablesBeforeFigures": true
+      },
+      {
+        "title": "Results",
+        "paragraphs": [
+          "Calibration yields consistent bias and sensitivity estimates across axes, and the resulting roll/pitch reconstructions track motion-capture angles closely in all three datasets.",
+          "With calibrated sensors, the UKF produces smooth angular-velocity estimates and quaternion trajectories that follow motion-capture ground truth. The roll, pitch, and yaw plots show tight alignment for roll/pitch, with yaw more sensitive to calibration and noise settings.",
+          "Figure I compares roll and pitch derived from calibrated acceleration to motion-capture ground truth across datasets. The alignment indicates the bias/scale fit is consistent and the axis conventions are correct.",
+          "Figure II shows calibrated gyroscope traces against ground-truth angular velocities for dataset 1. The overall amplitude and phase agreement confirm the scale and bias terms are reasonable across axes.",
+          "Figure III compares raw gyroscope readings to UKF angular-velocity estimates for dataset 2. The UKF output is smoother and less noisy while preserving the dominant motion trends.",
+          "Figure IV compares quaternion estimates to motion-capture quaternions on dataset 2. Agreement in the quaternion components indicates stable propagation and update behavior over time.",
+          "Figure V shows roll, pitch, and yaw against ground truth for dataset 2. Roll and pitch stay tightly aligned, while yaw shows the largest deviations consistent with gyro-driven drift."
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 2,
+            "figure": {
+              "src": "assets/img/projects/ukf-orientation-estimation/Acc calibration.png",
+              "alt": "Accelerometer calibration comparison",
+              "caption": "Figure I: Roll and pitch from calibrated accelerometer compared to motion-capture ground truth across datasets 1-3.",
+              "wide": true,
+              "scale": 0.9,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 3,
+            "figure": {
+              "src": "assets/img/projects/ukf-orientation-estimation/gyro calibration.png",
+              "alt": "Gyroscope calibration comparison",
+              "caption": "Figure II: Calibrated gyroscope angular velocity traces compared to ground-truth derivatives (dataset 1).",
+              "wide": true,
+              "scale": 0.9,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 4,
+            "figure": {
+              "src": "assets/img/projects/ukf-orientation-estimation/gyro readings.png",
+              "alt": "Gyroscope readings and UKF estimates",
+              "caption": "Figure III: Gyroscope readings versus UKF angular-velocity estimates for dataset 2.",
+              "wide": true,
+              "scale": 0.9,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 5,
+            "figure": {
+              "src": "assets/img/projects/ukf-orientation-estimation/Quat_plot.png",
+              "alt": "Quaternion estimates vs Vicon",
+              "caption": "Figure IV: Quaternion estimates compared to motion-capture quaternions for dataset 2.",
+              "wide": true,
+              "scale": 0.9,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 6,
+            "figure": {
+              "src": "assets/img/projects/ukf-orientation-estimation/rpy_plot.png",
+              "alt": "Roll pitch yaw vs Vicon",
+              "caption": "Figure V: Roll, pitch, and yaw estimates compared to motion-capture ground truth for dataset 2.",
+              "wide": true,
+              "scale": 0.9,
+              "noBorder": true
+            }
+          }
         ]
       },
       {
-        "title": "Estimation of Rotation",
+        "title": "Discussion",
         "paragraphs": [
-          "The UKF state is composed of a unit quaternion for orientation and a 3D angular velocity vector. Because quaternions are constrained to unit norm, uncertainty is represented in a 6D tangent space rather than the full 7D state.",
-          "Sigma points are generated from the covariance via a matrix square root, mapped into axis-angle perturbations for the quaternion component, and applied through quaternion multiplication. Angular velocity updates are additive in Euclidean space.",
-          "To compute the mean orientation, we iteratively average relative quaternion errors in axis-angle form until convergence. This yields a valid mean quaternion and covariance estimate compatible with UKF updates.",
-          "The measurement model combines accelerometer-derived gravity direction with gyroscope angular velocity. Sigma points are passed through this model to compute predicted measurement statistics, which drive the Kalman update using cross-covariance terms."
-        ]
-      },
-      {
-        "title": "Results and Discussion",
-        "paragraphs": [
-          "The filter produces stable orientation estimates that closely track Vicon ground truth when calibration is correct and noise parameters are well tuned. Euler-angle plots are especially useful for spotting axis flips, timing misalignment, or gyro scale errors.",
-          "The main sensitivity is calibration quality: small gyroscope scale errors cause rapid drift, while accelerometer bias errors distort gravity alignment. Quaternion-aware averaging and careful uncertainty propagation are essential for consistency on the rotation manifold.",
-          "Overall, this project reinforced the importance of geometric state representations, sensor calibration pipelines, and visualization-driven debugging for nonlinear state estimation in robotics."
+          "Overall performance is strong in roll and pitch, which are tightly constrained by the gravity vector and respond well to calibration. Yaw remains the most sensitive axis and shows the largest deviations, consistent with reliance on gyroscope integration and its calibration quality.",
+          "The calibration stage is the dominant driver of filter accuracy. Small gyro scale or bias errors manifest quickly as yaw drift, while accelerometer biases shift static alignment. With the chosen noise settings, the filter balances smoothness and responsiveness, but yaw performance suggests further tuning of gyro sensitivity and noise could yield improvements."
         ]
       }
     ]

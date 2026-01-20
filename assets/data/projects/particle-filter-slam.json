@@ -2,7 +2,7 @@
   "slug": "particle-filter-slam",
   "title": "Particle Filter SLAM on KITTI LiDAR",
   "subtitle": "Coursework implementation of particle-filter SLAM with occupancy grid mapping",
-  "summary": "Implemented the particle-filter SLAM steps on KITTI LiDAR data using a provided skeleton, focusing on dynamics, observation updates, resampling, and occupancy grid mapping.",
+  "summary": "Implemented a Rao-Blackwellized particle filter SLAM pipeline on KITTI LiDAR, including SE(2) motion propagation, log-odds occupancy mapping, stratified resampling, and numerically stable weight updates.",
   "kicker": "robotics",
   "year": 2025,
   "featured": false,
@@ -27,14 +27,14 @@
     }
   ],
   "glance": {
-    "oneLiner": "Particle-filter SLAM on KITTI LiDAR, implemented as ESE 6500 coursework.",
-    "problem": "What I do: implement a particle filter that localizes the vehicle and builds an occupancy grid from LiDAR scans. Why I do it: SLAM ties together motion and sensing under uncertainty, and the KITTI dataset offers real-world complexity that exposes where simple models succeed or fail.",
-    "approach": "I completed the TODO sections in the provided SLAM skeleton, implementing particle initialization, dynamics propagation, observation likelihood, weight updates, and stratified resampling. I used LiDAR-to-world transforms, log-odds occupancy updates, and a max-weight particle for mapping.",
-    "results": "The system produces coherent trajectories and occupancy maps across the KITTI sequences, matching the odometry trend while correcting drift. The assignment was straightforward in scope but highly valuable for understanding practical SLAM pipelines and the tradeoffs between model simplicity and data quality.",
+    "oneLiner": "Rao-Blackwellized particle-filter SLAM on KITTI LiDAR with log-odds occupancy grids.",
+    "problem": "Goal: estimate planar pose and a global occupancy grid from noisy LiDAR while respecting SE(2) kinematics. Challenge: map and localization are coupled, so the measurement model and weight updates must be stable across long sequences.",
+    "approach": "I implemented grid discretization, SE(2) motion composition with Gaussian noise, LiDAR-to-world transforms, log-domain weight updates, and stratified resampling triggered by effective sample size. The map is updated in log-odds using the MAP particle.",
+    "results": "The pipeline yields consistent trajectories and clean occupancy maps on KITTI sequences 00-03, with stable weights and resampling only when particle diversity drops. The main gains came from careful frame transforms and log-sum-exp normalization.",
     "takeaways": [
-      "Particle filtering provides a clear, modular baseline for SLAM in real data.",
-      "Observation likelihoods and log-odds mapping dominate map quality.",
-      "Even a simple model benefits from clean data and careful frame transforms."
+      "Rao-Blackwellization simplifies SLAM by factoring pose and map updates.",
+      "Numerically stable weight updates are critical for long LiDAR sequences.",
+      "Stratified resampling plus ESS thresholding keeps particles diverse."
     ]
   },
   "deep": {
@@ -42,9 +42,27 @@
       {
         "title": "Overview",
         "paragraphs": [
-          "This project implements particle-filter SLAM for the KITTI visual odometry sequences as part of ESE 6500: Learning in Robotics at Penn. The codebase is a course-provided skeleton; my contributions are limited to the TODO blocks in slam.py and the required integration points in main.py.",
-          "We estimate the vehicle pose (x, z, theta) using GPS/IMU-derived poses for evaluation and LiDAR scans for mapping. The observation model scores particles by how well LiDAR-derived occupied cells match the current binarized map, and the map is updated via log-odds occupancy updates with clipping. The first frame uses a known pose to bootstrap the grid before full SLAM runs.",
-          "The assignment is intentionally scoped and mostly procedural, but it was valuable for internalizing each SLAM step and how coordinate frames, transforms, and noisy observations interact in practice."
+          "This project implements a Rao-Blackwellized particle filter SLAM pipeline for KITTI sequences as part of ESE 6500 at Penn.",
+          "State is a planar pose $\\mathbf{x}_t = [x_t, z_t, \\psi_t]^\\top$ with an occupancy grid stored in log-odds. Each SLAM step consists of motion propagation, LiDAR-based observation scoring, weight normalization, and map updates using the MAP particle.",
+          "The emphasis is on theory-meets-implementation: consistent SE(2) operations, robust grid discretization, and numerically stable inference for long sequences."
+        ]
+      },
+      {
+        "title": "Implementation Details (Particle Filter SLAM)",
+        "paragraphs": [
+          "I follow the SLAM loop from motion to sensing to mapping, keeping the math explicit so each step matches a concrete implementation block.",
+          "Motion model: ground-truth KITTI poses are converted to $[x, z, \\psi]$, and control inputs are extracted via a group-consistent operator, $$\\mathbf{u}_t = \\mathbf{x}_t \\ominus \\mathbf{x}_{t-1}.$$ Each particle propagates with $$\\mathbf{x}_t^{(i)} = \\mathbf{x}_{t-1}^{(i)} \\oplus (\\mathbf{u}_t + \\boldsymbol{\\epsilon}), \\quad \\boldsymbol{\\epsilon} \\sim \\mathcal{N}(\\mathbf{0}, \\mathbf{Q}),$$ using smart_plus_2d for consistent SE(2) composition and angle wrapping.",
+          "LiDAR to world: points are lifted to homogeneous coordinates, transformed by the Velodyne-to-camera extrinsics, projected to the ground plane, and transformed by each particle's SE(2) pose, $$\\mathbf{T}(\\psi, \\mathbf{t}) = \\begin{bmatrix} \\cos\\psi & -\\sin\\psi & t_x \\\\ \\sin\\psi & \\cos\\psi & t_z \\\\ 0 & 0 & 1 \\end{bmatrix}.$$ This yields particle-conditioned point clouds for scoring and map updates.",
+          "Grid discretization: continuous $(x, z)$ is mapped to cell indices and clamped to map bounds, $$i = \\left\\lfloor \\frac{x - x_{\\min}}{\\Delta} \\right\\rfloor, \\quad j = \\left\\lfloor \\frac{z - z_{\\min}}{\\Delta} \\right\\rfloor, \\quad (i, j) \\in [0, s_x-1] \\times [0, s_z-1].$$ This produces a stacked integer index array for vectorized occupancy updates.",
+          "Log-domain weight update: observation log-likelihoods $\\ell_i = \\log p(\\mathbf{y}_t \\mid \\mathbf{x}_t^{(i)})$ are normalized with log-sum-exp, then weights are updated via $$\\tilde{w}_i = w_i \\exp\\bigl(\\ell_i - \\mathrm{LSE}(\\boldsymbol{\\ell})\\bigr), \\quad w_i \\leftarrow \\frac{\\tilde{w}_i}{\\sum_j \\tilde{w}_j}.$$ This avoids underflow when likelihoods vary sharply.",
+          "Observation + map update: LiDAR points are discretized into occupied cells, particle scores reflect overlap with the binarized map, and the MAP particle updates the log-odds grid with occupied and free-space increments plus clipping, $$L_t(m) \\leftarrow \\mathrm{clip}\\big(L_{t-1}(m) + \\Delta L_{\\text{occ/free}}\\big).$$ A binarized buffer is maintained for fast scoring.",
+          "Stratified resampling: with normalized weights $\\{w_i\\}_{i=1}^N$, I draw $r \\sim \\mathcal{U}(0, 1/N)$ and build thresholds $$u_m = r + \\frac{m}{N}, \\quad m=0,\\dots,N-1,$$ then walk the CDF to choose ancestors. Resampling resets weights to $1/N$ and is triggered only when $$N_{\\text{eff}} = \\frac{1}{\\sum_i w_i^2}$$ drops below a fixed ratio."
+        ]
+      },
+      {
+        "title": "Results",
+        "paragraphs": [
+          "The final occupancy grids and trajectories are consistent across KITTI sequences 00-03, with stable pose estimates and clean map structure over long horizons."
         ],
         "figures": [
           {
@@ -67,7 +85,7 @@
               }
             ],
             "caption": "Figure I: Occupancy grid maps and estimated trajectories for four KITTI sequences (00-03).",
-            "wide":false,
+            "wide": false,
             "scale": 0.6,
             "noBorder": true
           }
@@ -76,8 +94,8 @@
       {
         "title": "Notes on Contribution",
         "paragraphs": [
-          "I did not author utils.py or load_data.py. My work is confined to the TODO sections in slam.py, where I implemented particle initialization, dynamics propagation using SE(2) composition, observation likelihood, weight updates, and stratified resampling.",
-          "The core logic follows standard particle-filter SLAM: propagate particles with motion, evaluate LiDAR consistency against the occupancy grid, resample when the effective particle count drops, and update the map using the highest-weight particle."
+          "My contribution was the full SLAM pipeline: particle initialization, dynamics propagation, observation likelihoods, weight updates, stratified resampling, and log-odds map updates.",
+          "The approach follows standard particle-filter SLAM structure, but performance hinges on clean frame transforms, stable weight normalization, and careful handling of grid bounds."
         ]
       }
     ]

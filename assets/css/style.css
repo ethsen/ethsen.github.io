@@ -1081,6 +1081,23 @@ a:hover{ text-decoration: none; }
   height: auto;
   border-bottom: none;
 }
+.pager__frame{
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--panel2);
+  border: 1px solid var(--line2);
+  border-radius: var(--radius2);
+  overflow: hidden;
+}
+.pager__img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
 .pager__img.is-slide{
   animation: pager-slide 360ms ease;
 }
@@ -1107,6 +1124,10 @@ a:hover{ text-decoration: none; }
   padding: 0;
 }
 .figure--no-border .gallery__track{
+  background: transparent;
+}
+.figure--no-border .pager__frame{
+  border: none;
   background: transparent;
 }
 .figure--gallery-single .gallery{
