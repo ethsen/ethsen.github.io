@@ -38,6 +38,7 @@ function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (k === "class") node.className = v;
+    else if (k === "html") node.innerHTML = v;
     else if (k === "text") node.textContent = v;
     else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2), v);
     else node.setAttribute(k, v);
@@ -80,6 +81,11 @@ function renderChips(tags) {
   return wrap;
 }
 
+function getMainTags(project) {
+  if (Array.isArray(project?.mainTags) && project.mainTags.length) return project.mainTags;
+  return project?.tags || [];
+}
+
 function renderProjectCard(p) {
   const badges = [];
   if (p.featured) badges.push(el("span", { class: "badge", text: "featured" }));
@@ -109,7 +115,7 @@ function renderProjectCard(p) {
 
 function uniqueTags(projects) {
   const set = new Set();
-  projects.forEach(p => (p.tags || []).forEach(t => set.add(t)));
+  projects.forEach(p => getMainTags(p).forEach(t => set.add(t)));
   return [...set].sort((a,b) => a.localeCompare(b));
 }
 
@@ -134,12 +140,13 @@ async function initHomeProjects() {
 
     let out = [...projects];
 
-    if (tag) out = out.filter(p => (p.tags || []).includes(tag));
+    if (tag) out = out.filter(p => getMainTags(p).includes(tag));
     if (q) {
       out = out.filter(p => {
         const blob = [
           p.title, p.summary, p.subtitle,
           ...(p.tags || []),
+          ...(p.mainTags || []),
           ...(p.tech || []),
         ].filter(Boolean).join(" ").toLowerCase();
         return blob.includes(q);
@@ -183,12 +190,13 @@ async function initProjectsIndex() {
 
     let out = [...projects];
 
-    if (tag) out = out.filter(p => (p.tags || []).includes(tag));
+    if (tag) out = out.filter(p => getMainTags(p).includes(tag));
     if (q) {
       out = out.filter(p => {
         const blob = [
           p.title, p.summary, p.subtitle,
           ...(p.tags || []),
+          ...(p.mainTags || []),
           ...(p.tech || []),
         ].filter(Boolean).join(" ").toLowerCase();
         return blob.includes(q);
@@ -245,11 +253,16 @@ function renderLinks(links) {
 
     const children = [];
     if (l.icon) {
+      const lightIcon = l.iconLight || l.icon;
+      const darkIcon = l.iconDark || l.icon;
+      const useDark = document.documentElement.classList.contains("theme-dark");
       children.push(el("img", {
         class: "btn__icon",
-        src: assetUrl(l.icon),
+        src: assetUrl(useDark ? darkIcon : lightIcon),
         alt: l.iconOnly ? "" : (l.iconAlt || l.label || "icon"),
-        loading: "lazy"
+        loading: "lazy",
+        "data-icon-light": lightIcon ? assetUrl(lightIcon) : "",
+        "data-icon-dark": darkIcon ? assetUrl(darkIcon) : ""
       }));
     }
     if (!l.iconOnly) {
@@ -259,6 +272,17 @@ function renderLinks(links) {
     wrap.appendChild(el("a", attrs, children));
   });
 }
+
+function updateThemeIcons() {
+  const useDark = document.documentElement.classList.contains("theme-dark");
+  document.querySelectorAll("img[data-icon-light]").forEach(img => {
+    const light = img.getAttribute("data-icon-light");
+    const dark = img.getAttribute("data-icon-dark");
+    if (useDark && dark) img.src = dark;
+    if (!useDark && light) img.src = light;
+  });
+}
+window.updateThemeIcons = updateThemeIcons;
 
 function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
   const block = el("section", { class: "block" });
@@ -277,7 +301,8 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
     });
   }
   paragraphs.filter(Boolean).forEach((p, idx) => {
-    const node = el("p", { text: p });
+    const useHtml = typeof p === "string" && (p.includes("<strong>") || p.includes("<a "));
+    const node = el("p", useHtml ? { html: p } : { text: p });
     paraEls.push(node);
     block.appendChild(node);
     if (inlineMap.has(idx)) {
@@ -387,8 +412,6 @@ function renderFigure(fig) {
       img.alt = item.alt || fig.caption || "Project figure";
       img.classList.add("is-slide");
     };
-    const prevBtn = el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Prev" });
-    const nextBtn = el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Next" });
     const goPrev = () => {
       currentIndex = (currentIndex - 1 + fig.pager.length) % fig.pager.length;
       updateImage(currentIndex);
@@ -397,12 +420,6 @@ function renderFigure(fig) {
       currentIndex = (currentIndex + 1) % fig.pager.length;
       updateImage(currentIndex);
     };
-    prevBtn.addEventListener("click", () => {
-      goPrev();
-    });
-    nextBtn.addEventListener("click", () => {
-      goNext();
-    });
     if (fig.autoCycle) {
       const intervalMs = Number(fig.autoCycle) || 5000;
       const startAuto = () => {
@@ -417,8 +434,7 @@ function renderFigure(fig) {
       startAuto();
       pagerAutoRegistry.set(pagerId, { pause: stopAuto, resume: startAuto });
     }
-    const controls = el("div", { class: "gallery__controls gallery__controls--center gallery__controls--spacious" }, [prevBtn, nextBtn]);
-    media = el("div", {}, [frame, controls]);
+    media = frame;
   } else if (Array.isArray(fig.gallery) && fig.gallery.length) {
     const trackId = `proj-gallery-${galleryIdCounter++}`;
     const trackAttrs = { class: "gallery__track" };
@@ -433,15 +449,7 @@ function renderFigure(fig) {
       }));
     });
     const galleryWrap = el("div", { class: "gallery" }, [track]);
-    if (fig.controls) {
-      const controls = el("div", { class: "gallery__controls" }, [
-        el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Prev", "data-gallery": "prev", "data-gallery-target": trackId }),
-        el("button", { class: "btn btn--small btn--ghost", type: "button", text: "Next", "data-gallery": "next", "data-gallery-target": trackId })
-      ]);
-      media = el("div", {}, [galleryWrap, controls]);
-    } else {
-      media = galleryWrap;
-    }
+    media = galleryWrap;
   } else if (Array.isArray(fig.images) && fig.images.length) {
     const gridAttrs = { class: "figure__grid" };
     if (fig.columns) gridAttrs.style = `--figure-columns: ${fig.columns};`;
@@ -516,8 +524,6 @@ function renderTables(tables) {
 
 function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures = null, tables = null, opts = {}) {
   const block = renderBlock(title, paragraphs, bullets, opts);
-  const hasFigures = Array.isArray(figures) && figures.length;
-  const hasAfterFirst = Array.isArray(opts.afterFirstFigureParagraphs) && opts.afterFirstFigureParagraphs.length;
   const inlineAfterParagraphFigures = Array.isArray(opts.inlineAfterParagraphFigures)
     ? opts.inlineAfterParagraphFigures
     : null;
@@ -552,27 +558,17 @@ function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures 
     return block;
   }
 
-  if (hasFigures && hasAfterFirst) {
-    const first = renderFigure(figures[0]);
-    if (first) block.appendChild(first);
-    opts.afterFirstFigureParagraphs.filter(Boolean).forEach(p => {
+  if (opts.tablesBeforeFigures) {
+    const tbls = renderTables(tables);
+    if (tbls) block.appendChild(tbls);
+  }
+  if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
+    opts.afterTableParagraphs.filter(Boolean).forEach(p => {
       block.appendChild(el("p", { text: p }));
     });
-    const rest = renderFigures(figures.slice(1));
-    if (rest) block.appendChild(rest);
-  } else {
-    if (opts.tablesBeforeFigures) {
-      const tbls = renderTables(tables);
-      if (tbls) block.appendChild(tbls);
-    }
-    if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
-      opts.afterTableParagraphs.filter(Boolean).forEach(p => {
-        block.appendChild(el("p", { text: p }));
-      });
-    }
-    const figs = renderFigures(figures);
-    if (figs) block.appendChild(figs);
   }
+  const figs = renderFigures(figures);
+  if (figs) block.appendChild(figs);
 
   if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
     opts.afterParagraphs.filter(Boolean).forEach((p, idx) => {
@@ -602,14 +598,18 @@ function initTocHighlight(sectionIds) {
   });
   if (!tocLinks.size) return;
 
+  const setCurrent = id => {
+    const link = tocLinks.get(id);
+    if (!link) return;
+    tocLinks.forEach(l => l.classList.remove("is-current"));
+    link.classList.add("is-current");
+  };
+
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       const id = entry.target.getAttribute("id");
-      const link = tocLinks.get(id);
-      if (!link) return;
       if (entry.isIntersecting) {
-        tocLinks.forEach(l => l.classList.remove("is-current"));
-        link.classList.add("is-current");
+        setCurrent(id);
       }
     });
   }, { rootMargin: "-20% 0px -60% 0px", threshold: 0.01 });
@@ -618,6 +618,19 @@ function initTocHighlight(sectionIds) {
     const el = document.getElementById(id);
     if (el) observer.observe(el);
   });
+
+  const lastId = sectionIds[sectionIds.length - 1];
+  const onScroll = () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const viewportBottom = scrollTop + window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+    if (docHeight - viewportBottom <= 2) {
+      setCurrent(lastId);
+    }
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
 }
 
 async function initProjectPage() {
@@ -647,8 +660,10 @@ async function initProjectPage() {
   const subtitleEl = document.getElementById("proj-subtitle");
   subtitleEl.textContent = p.subtitle || p.summary || "";
   subtitleEl.parentElement?.querySelectorAll(".hero-credit").forEach(node => node.remove());
+  subtitleEl.parentElement?.querySelectorAll(".hero-authors").forEach(node => node.remove());
+  let heroCredit = null;
   if (p.heroOverlay?.creditText && p.heroOverlay?.creditHref) {
-    const credit = el("div", { class: "hero-credit" }, [
+    heroCredit = el("div", { class: "hero-credit" }, [
       el("a", {
         href: p.heroOverlay.creditHref,
         target: "_blank",
@@ -656,7 +671,16 @@ async function initProjectPage() {
         text: p.heroOverlay.creditText
       })
     ]);
-    subtitleEl.insertAdjacentElement("afterend", credit);
+    subtitleEl.insertAdjacentElement("afterend", heroCredit);
+  }
+  if (Array.isArray(p.authors) && p.authors.length) {
+    const authorText = `With ${p.authors.join(", ")}`;
+    const authorEl = el("p", { class: "muted hero-authors", text: authorText });
+    if (heroCredit) {
+      heroCredit.insertAdjacentElement("afterend", authorEl);
+    } else {
+      subtitleEl.insertAdjacentElement("afterend", authorEl);
+    }
   }
 
   const hero = document.querySelector(".article-hero");
@@ -687,7 +711,8 @@ async function initProjectPage() {
 
   const tagsMount = document.getElementById("proj-tags");
   tagsMount.innerHTML = "";
-  (p.tags || []).forEach(t => tagsMount.appendChild(el("span", { class: "chip", text: t })));
+  const tagSet = new Set([...(p.mainTags || []), ...(p.tags || [])]);
+  tagSet.forEach(t => tagsMount.appendChild(el("span", { class: "chip", text: t })));
   (p.tech || []).forEach(t => tagsMount.appendChild(el("span", { class: "chip", text: t })));
 
   // Toggle buttons
@@ -730,8 +755,10 @@ async function initProjectPage() {
 
     const toc = document.getElementById("proj-toc");
     const aside = document.getElementById("proj-aside");
+    const wrap = document.querySelector(".article-wrap");
     if (toc) toc.innerHTML = "";
     if (aside) aside.hidden = view !== "deep";
+    if (wrap) wrap.classList.toggle("article-wrap--single", view === "glance");
 
     if (view === "glance") {
       const problemLines = [p.glance?.oneLiner, p.glance?.problem || p.summary].filter(Boolean);
@@ -760,7 +787,6 @@ async function initProjectPage() {
               lede: idx === 0,
               callout: s.callout || null,
               afterParagraphs: s.afterParagraphs || null,
-              afterFirstFigureParagraphs: s.afterFirstFigureParagraphs || null,
               afterTableParagraphs: s.afterTableParagraphs || null,
               tablesBeforeFigures: Boolean(s.tablesBeforeFigures),
               inlineFigures: s.inlineFigures || null,
@@ -768,6 +794,7 @@ async function initProjectPage() {
             }
           ));
         });
+        body.appendChild(el("div", { class: "proj-body-spacer", "aria-hidden": "true" }));
         initTocHighlight(sectionIds);
       } else {
         body.appendChild(renderBlockWithFigures("Overview", [

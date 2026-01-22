@@ -1,0 +1,262 @@
+{
+  "slug": "beat-the-expert-il-rl",
+  "title": "Beat-the-Expert: An IL-RL Framework to Outperform Expert Racing Policies",
+  "subtitle": "Bootstrapping PPO with HG-DAGGER imitation learning for F1TENTH racing",
+  "summary": "Bootstrapped PPO with a pre-trained HG-DAGGER policy to improve sample efficiency in autonomous racing, surpassing the easiest expert demonstration but falling short on harder expert traces.",
+  "kicker": "robotics",
+  "year": 2025,
+  "featured": true,
+  "thumbnail": "assets/img/projects/beat-the-expert-il-rl/thumbnail.png",
+  "tags": [
+    "imitation learning",
+    "autonomous racing"
+  ],
+  "mainTags": [
+    "robotics",
+    "reinforcement learning"
+  ],
+  "tech": [
+    "Python",
+    "PyTorch",
+    "F1TENTH"
+  ],
+  "authors": [
+    "Vineet Pasumarti"
+  ],
+  "hideFigures": false,
+  "links": [
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/IL-RL-Pasumarti-Senatore.pdf",
+      "kind": "secondary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "Hybrid IL-RL racing policy that uses imitation learning to jump-start PPO in F1TENTH autonomous racing.",
+    "problem": "End-to-end RL for autonomous racing is sample-inefficient and prone to local optima, yet expert demonstrations alone can limit agility and generalization. The question is whether RL can reliably improve upon a strong IL baseline in high-speed racing.",
+    "approach": "Pre-train an HG-DAGGER imitation policy from expert demonstrations, then use it to initialize PPO. Train on the F1TENTH platform and compare lap performance against expert demonstrations of varying difficulty.",
+    "results": "The IL-RL policy improves sample efficiency and surpasses the easiest expert demonstration, but does not outperform the medium or hardest experts. This suggests the IL bootstrap helps early learning, while pure RL may still be needed to reach elite performance.",
+    "takeaways": [
+      "IL bootstrapping improves PPO sample efficiency in autonomous racing.",
+      "Hybrid IL-RL beats easy expert traces but not the hardest expert policies.",
+      "End-to-end RL remains important for peak agility in racing contexts."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "paragraphs": [
+          "The fast-paced, dynamic nature of racing makes it an excellent platform for testing reinforcement learning, with clear metrics and high-speed control constraints. At the same time, end-to-end RL can be sample-inefficient and prone to local optima, motivating stronger priors for stable learning in autonomous racing.",
+          "We use the F1TENTH platform and simulator to study how imitation learning and reinforcement learning trade off in this setting. The core question is whether RL can improve upon an imitation-learned policy to produce a more robust and agile racing controller that outperforms an expert demonstrator.",
+          "In this project, we contribute two components: (1) an IL-RL pipeline that bootstraps PPO from an HG-DAGGER imitation policy, and (2) a comparison between end-to-end RL policies and bootstrapped RL policies across expert difficulty levels."
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 2,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/crop_map_1_f1tenth.png",
+                  "alt": "F1TENTH racetrack used for training and evaluation"
+                },
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/f1tenth_raceline_traj.png",
+                  "alt": "Optimal raceline trajectory followed by the expert policy"
+                }
+              ],
+              "caption": "Figure 1: (Left) The F1TENTH racetrack used for training and evaluation of the learned policies against expert demonstrations. (Right) The optimal raceline computed for minimum curvature and followed by the expert policy using a pure pursuit controller.",
+              "wide": true,
+              "noBorder": true
+            }
+          }
+        ],
+        "callout": {
+          "label": "Key finding",
+          "text": "IL bootstrapping improves sample efficiency and beats the easiest expert, but does not outperform harder expert policies."
+        }
+      },
+      {
+        "title": "Method",
+        "paragraphs": [
+          "The policy network is pre-trained with HG-DAGGER and fine-tuned using PPO on the sample racetrack shown below. We repeat the same pipeline for each expert difficulty (easy, medium, hard), producing three policies that are evaluated against their corresponding expert on the same track.",
+          "Imitation Learning Bootstrap. We train inside the F1TENTH gym with an HG-DAGGER expert that follows a pure-pursuit controller on an optimal raceline using three velocity profiles. The learned policy is an MLP that takes a 54-dimensional, down-sampled 1080-ray LiDAR scan plus the car's current linear velocity. The hidden dimension is 256 and the learning rate is 0.0001, and both expert and learner output continuous steering and speed. The easy and medium experts fix velocities at 3 m/s and 5 m/s, while the hard expert tracks the raceline's longitudinal velocity $(v_x)$ and acceleration $(a_x)$, reaching 8 m/s on straights and about 5 m/s in turns. HG-DAGGER triggers expert takeover when the speed or steering difference exceeds thresholds $\\gamma_v=1$ and $\\gamma_{\\omega}=0.1$.",
+          "Reinforcement Learning. PPO fine-tunes the HG-DAGGER policy using the same architecture and inputs. We initialize PPO either with a full weight transfer from the IL model or with partial transfer (feature extractor + steering head copied; velocity input and speed output weights randomized) to promote exploration.",
+          "Rewards combine velocity, progress, and collisions:\n$$\nR = R_v + R_p + R_c\n$$\n$$\nR_v = 0.25\\,v_t \\quad R_p = 10\\,\\Delta s_t \\quad R_c = -1\n$$\nwhere $v_t$ is forward speed and $\\Delta s_t = s_t - s_{t-1}$ is progress along the centerline.",
+          "PPO collects tuples $(s, a, r, s', \\log\\pi(a|s), \\text{done})$ where $s$ is the LiDAR+velocity observation, $a$ is steering/speed, and $s'$ is the next observation. Training uses 2048-step rollouts, GAE with $\\lambda=0.95$, 10 epochs, actor/critic learning rates of 0.0002, mini-batch size 64, $\\ell_2$ regularization 0.001, discount $\\gamma=0.99$, clip $\\epsilon=0.2$, and entropy coefficient 0.001 with decay 0.99. End-to-end RL uses identical hyperparameters with random initialization. Evaluation reports average rewards and velocities over multiple episodes without exploration noise."
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 0,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/Hockenheim_map.png",
+                  "alt": "F1TENTH racetrack map used in training"
+                },
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/Spa_map.png",
+                  "alt": "Additional racetrack map for comparison"
+                }
+              ],
+              "caption": "Figure 2: Sample racetracks used for training and evaluation in the F1TENTH environment.",
+              "wide": true,
+              "noBorder": true
+            }
+          }
+        ]
+      },
+      {
+        "title": "Experimental Results",
+        "paragraphs": [
+          "We compare bootstrapped RL policies against their matching expert demonstrations (easy, medium, hard) and against an end-to-end RL baseline, using lap time as the primary metric (lower is better).",
+          "The easy bootstrapped RL agent (37.41 s) beats the easy expert (52.12 s), a 28.22% reduction, indicating that the learned policy can decouple steering from speed and push beyond the expert's fixed velocity. In contrast, the medium and hard bootstrapped agents underperform their experts: medium expert 31.27 s vs. 38.80 s, and hard expert 24.11 s vs. 37.68 s. The gap widens with expert quality, suggesting bootstrapped PPO struggles to match increasingly agile demonstrations.",
+          "All three bootstrapped agents converge to similar lap times (37.41–38.80 s) despite different expert initializations, pointing to a PPO performance plateau driven more by reward structure and exploration than by the IL policy. The end-to-end RL agent (34.75 s) outperforms all bootstrapped variants but still falls short of the medium and hard experts, reinforcing that reward design and exploration dominate final performance."
+        ],
+        "tablesBeforeFigures": true,
+        "tables": [
+          {
+            "title": "Table 1: Example map testing across different policies.",
+            "columns": [
+              "Policy",
+              "Average Speed (m/s)",
+              "Average Lap Time (s)"
+            ],
+            "rows": [
+              [
+                "Hard Expert",
+                "6.48",
+                "24.11"
+              ],
+              [
+                "Medium Expert",
+                "5.01",
+                "31.27"
+              ],
+              [
+                "Easy Expert",
+                "3.14",
+                "52.19"
+              ],
+              [
+                "Hard Bootstrap RL",
+                "4.15",
+                "37.67"
+              ],
+              [
+                "Medium Bootstrap RL",
+                "4.03",
+                "38.79"
+              ],
+              [
+                "Easy Bootstrap RL",
+                "4.18",
+                "37.41"
+              ],
+              [
+                "End-To-End RL",
+                "4.50",
+                "34.75"
+              ]
+            ]
+          },
+          {
+            "title": "Table 2: End-to-end RL test metrics across different tracks (25 laps).",
+            "columns": [
+              "Track",
+              "Average Speed (m/s)",
+              "Average Lap Time (s)",
+              "Lap Completion Percentage"
+            ],
+            "rows": [
+              [
+                "Example Map",
+                "4.50",
+                "34.75",
+                "100"
+              ],
+              [
+                "Spielberg",
+                "4.46",
+                "78.64",
+                "100"
+              ],
+              [
+                "Nuerburgring",
+                "4.21",
+                "112.42",
+                "84"
+              ],
+              [
+                "Sao Paulo",
+                "4.33",
+                "85.27",
+                "96"
+              ],
+              [
+                "Spa",
+                "4.83",
+                "116.32",
+                "12"
+              ],
+              [
+                "Hockenheim",
+                "4.85",
+                "81.63",
+                "8"
+              ]
+            ]
+          }
+        ],
+        "afterTableParagraphs": [
+          "As shown in the metrics table, the RL agents tend toward near-constant velocity rather than modulating speed through straights and turns as the hard expert does; the 2-hidden-layer MLP appears to converge to a uniform velocity profile. Despite similar final lap times, bootstrapped RL achieves better sample efficiency, converging at roughly 180k steps versus 500k for end-to-end RL."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/beat-the-expert-il-rl/f1tenth_hamilton_bar.png",
+            "alt": "Lap time comparison for expert and RL policies",
+            "caption": "Figure 2: Comparison of lap times for expert demonstrators and RL agents. Bootstrapped RL agents show similar performance and are outperformed by the end-to-end RL agent; only the easy expert is surpassed.",
+            "wide": true
+          }
+        ],
+        "afterParagraphs": [
+          "End-to-end RL generalizes reasonably across tracks without map memorization, completing most circuits but struggling on technical layouts like Spa and Hockenheim where tight, blind corners reduce completion rates. This likely reflects the reactive nature of the policy, which depends on immediate LiDAR input without longer-horizon planning."
+        ],
+        "inlineAfterParagraphFigures": [
+          {
+            "afterParagraph": 0,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/Hockenheim_map.png",
+                  "alt": "Hockenheim track"
+                },
+                {
+                  "src": "assets/img/projects/beat-the-expert-il-rl/Spa_map.png",
+                  "alt": "Spa-Francorchamps track"
+                }
+              ],
+              "caption": "Figure 3: Tracks where the end-to-end policy struggles due to tight, technical corners (Hockenheim and Spa-Francorchamps).",
+              "wide": true,
+              "noBorder": true
+            }
+          }
+        ]
+      },
+      {
+        "title": "Conclusion",
+        "paragraphs": [
+          "This project studied the integration of imitation learning and reinforcement learning for autonomous racing on the F1TENTH platform. Bootstrapped PPO policies surpassed the easiest expert but did not beat the medium or hard experts, and final lap times plateaued regardless of expert difficulty. The IL-RL pipeline improved sample efficiency by converging nearly three times faster than end-to-end RL, while end-to-end RL achieved the best lap times among learned policies and generalized reasonably to unseen tracks.",
+          "Overall, IL pre-training accelerates RL convergence, but exceeding expert performance appears to depend more on RL configuration and reward design. End-to-end RL, despite its sample inefficiency, showed the highest performance ceiling in this setup, yet the reactive, memory-less policy struggled on sharp or technical turns.",
+          "Future work could train end-to-end RL on a broader set of maps, redesign reward shaping for tighter cornering behavior, and explore curriculum learning with expert demonstrations to better guide performance toward expert-level racing."
+        ]
+      },
+      {
+        "title": "Author Contribution",
+        "paragraphs": [
+          "I handled the end-to-end RL policy training and evaluation, focusing on reward structuring and shaping to inform both the baseline policy and the IL-RL pipeline."
+        ]
+      }
+    ]
+  }
+}

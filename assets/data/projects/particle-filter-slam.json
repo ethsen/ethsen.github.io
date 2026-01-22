@@ -8,9 +8,11 @@
   "featured": false,
   "thumbnail": "assets/img/projects/particle-filter-slam/thumbnail.png",
   "tags": [
-    "robotics",
     "slam",
     "localization"
+  ],
+  "mainTags": [
+    "robotics"
   ],
   "tech": [
     "Python",
@@ -21,7 +23,8 @@
       "label": "Repo",
       "href": "https://github.com/ethsen/Particle-Filter-Slam",
       "kind": "primary",
-      "icon": "assets/img/github_logo.png",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
     }
@@ -85,6 +88,7 @@
               }
             ],
             "caption": "Figure I: Occupancy grid maps and estimated trajectories for four KITTI sequences (00-03).",
+            "autoCycle": 2500,
             "wide": false,
             "scale": 0.6,
             "noBorder": true

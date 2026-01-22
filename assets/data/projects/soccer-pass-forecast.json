@@ -8,9 +8,12 @@
   "featured": true,
   "thumbnail": "assets/img/projects/soccer-pass-forecast/thumbnail.png",
   "tags": [
-    "sports",
     "deep learning",
-    "vision"
+    "vision",
+    "spatial modeling"
+  ],
+  "mainTags": [
+    "sports"
   ],
   "tech": [
     "PyTorch",
@@ -22,7 +25,8 @@
       "label": "Repo",
       "href": "https://github.com/",
       "kind": "primary",
-      "icon": "assets/img/github_logo.png",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
     },
@@ -49,17 +53,21 @@
       {
         "title": "Introduction",
         "paragraphs": [
-          "Sequential decision-making relies on a state representation, but soccer offers only partial observability and no compact state that captures intent, motion, and tactics. Spatiotemporal tracking data can approximate a full state, yet broadcast-derived event data provides only sparse freeze-frame snapshots.",
-          "Prior work on long-horizon value estimation exposed how representation gaps and missing context can destabilize learning. This project returns to the foundations and asks: how much information is needed to recover meaningful spatial structure in passing when the state is incomplete?",
-          "Using StatsBomb Open freeze frames, we model dense pass-feasibility surfaces from event-aligned observations. We design spatial feature channels for pitch geometry, player and ball encodings, and interaction-based control maps, then evaluate their effect through controlled ablations with a fixed fully convolutional model."
+          "Sequential decision-making relies on a state representation that captures the information needed to reason about future outcomes. In fully observable domains like chess, the state is compact and complete. Soccer presents a far more challenging setting. The true state of a match includes continuous player and ball motion, tactical structure, and latent intent, much of which is unobserved or only partially captured by available data.",
+          "High-resolution spatiotemporal tracking data can approximate this ideal, but many widely used datasets provide only sparse, event-aligned snapshots. Broadcast-derived freeze-frame data records player and ball locations only at the moment an action occurs, omitting large portions of play and excluding players outside the camera’s field of view. As a result, the effective state available to a model is spatially incomplete and temporally discontinuous, as shown in Figure I.",
+          "This project is motivated by earlier work on long-horizon value estimation in soccer, which revealed that learning stability depends critically on what information the state representation can reliably support. Representation gaps and missing context introduced errors that were difficult to diagnose and propagated through downstream value estimates. Rather than treating partial observability as a limitation to be worked around, this work revisits the problem from a more foundational perspective. See the <a href=\"project.html?slug=socceriq-function&view=deep\">previous project</a> for that earlier study.",
+          "Using freeze-frame data from the StatsBomb Open Dataset, we ask how much information is required to recover meaningful spatial structure in passing behavior under incomplete observability. We focus on learning dense pass completion probability surfaces from event-aligned snapshots and study how carefully designed spatial feature channels can compensate for missing players and limited context. Through controlled ablation experiments with a fixed fully convolutional model, this project demonstrates that thoughtful state construction can enable coherent spatial reasoning even in the absence of full spatiotemporal tracking, providing a foundation for future work on decision-making and value estimation in soccer."
         ],
-        "figures": [
+        "inlineFigures": [
           {
-            "src": "assets/img/projects/soccer-pass-forecast/visibility.png",
-            "alt": "Placeholder pass feasibility figure",
-            "caption": "Figure I: Broadcast visible area and player positions for a single frame, demonstrating the limited field of view available to broadcast-based soccer models. Attacking players (blue), defending players (orange), and the ball (black) are shown; only the shaded region corresponds to what is observable in the broadcast view.",
-            "wide": false,
-            "scale": 0.75
+            "afterParagraph": 1,
+            "figure": {
+              "src": "assets/img/projects/soccer-pass-forecast/visibility.png",
+              "alt": "Placeholder pass feasibility figure",
+              "caption": "Figure I: Broadcast visible area and player positions for a single frame, demonstrating the limited field of view available to broadcast-based soccer models. Attacking players (blue), defending players (orange), and the ball (black) are shown; only the shaded region corresponds to what is observable in the broadcast view.",
+              "wide": false,
+              "scale": 0.75
+            }
           }
         ],
         "callout": {

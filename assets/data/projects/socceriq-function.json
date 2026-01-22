@@ -7,20 +7,27 @@
   "year": 2025,
   "featured": false,
   "tags": [
+    "offline RL",
+    "value estimation"
+  ],
+  "mainTags": [
     "sports",
-    "reinforcement learning",
-    "deep learning"
+    "reinforcement learning"
   ],
   "tech": [
     "Python",
     "PyTorch"
+  ],
+  "authors": [
+    "Ignacio Boero"
   ],
   "links": [
     {
       "label": "Repo",
       "href": "https://github.com/IgnacioBoero/Soccer",
       "kind": "primary",
-      "icon": "assets/img/github_logo.png",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
     },
@@ -62,8 +69,7 @@
       {
         "title": "Numerical Experiments",
         "paragraphs": [
-          "Experiments were trained on a GTX 4090, and the implementation is available at https://github.com/IgnacioBoero/Soccer.",
-          "We use StatsBomb 360 tracking and event data covering 292 matches and over one million events. Events are converted to SPADL format for vectorization, then filtered to passes, dribbles, crosses, and shots. The 360 tracking is derived from broadcast video, which makes it accessible but lower fidelity than 10 Hz tracking; missing players and inconsistent state snapshots are common, and access to higher-resolution data is limited. A compact overview of the model architecture appears in Figure 1.",
+          "We use StatsBomb 360 tracking and event data covering 292 matches and over one million events. Events are converted to SPADL format for vectorization, then filtered to passes, dribbles, crosses, and shots. The 360 tracking is derived from broadcast video, which makes it accessible but lower fidelity than 10 Hz tracking; missing players and inconsistent state snapshots are common, and access to higher-resolution data is limited. A compact overview of the model architecture appears in Figure I.",
           "To minimize distribution shift, we shuffle events across all trajectories and split 80% train / 20% validation. The dataset is sharded and streamed with an iterative loader. Input features are normalized using training-set mean and standard deviation, and target returns are normalized as well.",
           "Regularization includes $\\ell_2$ weight decay ($10^{-6}$ to $10^{-3}$), dropout in both encoders and the Q-head ($p_{\\text{drop}}$ in $[0,0.20]$), gradient clipping at 1.0, a frozen TD(0) target network updated every 2000 iterations, and early stopping after three epochs without validation improvement.",
           "We run Optuna with 64 trials per method over the grid-search space in Table 1; best configurations and losses are shown in Table 2. TD(0) reaches 0.08 training loss and 0.12 validation loss, while Monte Carlo reaches 0.56 and 0.81, with a larger generalization gap. Losses are not directly comparable across methods because TD(0) measures Bellman consistency, $Q(s,a)-[r+Q(s',a')]$, whereas Monte Carlo regresses to full-return targets. The main limitation is weak generalization, largely due to noisy event snapshots (e.g., player locations misaligned with ball start/end). Beyond loss, inspecting action values for a fixed state provides more meaningful signal."
@@ -74,7 +80,7 @@
             "figure": {
               "src": "assets/img/projects/socceriq-function/SoccerIQ-Arch.png",
               "alt": "SoccerIQ architecture diagram",
-              "caption": "Figure 1: SoccerIQ architecture with parallel state and action encoders feeding the Q-head.",
+              "caption": "Figure I: SoccerIQ architecture with parallel state and action encoders feeding the Q-head.",
               "wide": true
             }
           }
@@ -168,8 +174,8 @@
       {
         "title": "Results and Discussion",
         "paragraphs": [
-          "Figure 2 shows three examples of model outputs for passing, where the heatmap reflects the predicted reward of passing into each cell. In a mid-block possession state (left), the model highlights the open right flank and downweights the crowded central lane. In a last-phase state just outside the box (middle), it recognizes congestion inside the area and favors space on the periphery. In a build-up state (right), it again flags open wide zones. Across all three, the model assigns high reward to backward passes, which may reflect a learned preference for retaining possession or a bias from the data. Another recurring pattern is lower reward in last-phase contexts, even though optimal decisions near goal should, in theory, be the most valuable; at this point we cannot tell whether this is strategic signal or artifact. During testing, meaningful examples were scarce because many snapshots were incomplete or incoherent, and the model struggled with complex states; richer context consistently produced more interpretable heatmaps.",
-          "Figure 3 shows dribble evaluation as a 5m x 5m neighborhood heatmap around the ball. This is the weakest part of the model: the surfaces lack clear guidance about when or where to dribble. We suspect the training data under-represents dribble sequences with high reward, with most positive trajectories coming from pass-to-shot chains, which leaves the model without enough signal to learn coherent dribble value.",
+          "Figure II shows three examples of model outputs for passing, where the heatmap reflects the predicted reward of passing into each cell. In a mid-block possession state (left), the model highlights the open right flank and downweights the crowded central lane. In a last-phase state just outside the box (middle), it recognizes congestion inside the area and favors space on the periphery. In a build-up state (right), it again flags open wide zones. Across all three, the model assigns high reward to backward passes, which may reflect a learned preference for retaining possession or a bias from the data. Another recurring pattern is lower reward in last-phase contexts, even though optimal decisions near goal should, in theory, be the most valuable; at this point we cannot tell whether this is strategic signal or artifact. During testing, meaningful examples were scarce because many snapshots were incomplete or incoherent, and the model struggled with complex states; richer context consistently produced more interpretable heatmaps.",
+          "Figure III shows dribble evaluation as a 5m x 5m neighborhood heatmap around the ball. This is the weakest part of the model: the surfaces lack clear guidance about when or where to dribble. We suspect the training data under-represents dribble sequences with high reward, with most positive trajectories coming from pass-to-shot chains, which leaves the model without enough signal to learn coherent dribble value.",
           "The results demonstrate that direct Q-function approximation via deep networks can capture some meaningful spatial patterns in soccer, but also highlight key challenges in data quality, representation, and evaluation. Compared to existing value-based approaches (e.g., VAEP or EPV), our model offers an end-to-end estimate of action values, yet struggles with generalization and nuanced decision-making. Our TD(0) estimator achieved low temporal-difference error on held-out data, indicating successful fitting of the Bellman equation, whereas the Monte Carlo baseline suffered high variance and poorer generalization. The generated pass-reward heatmaps sometimes highlight open space, mirroring SoccerMap's spatial awareness, but also occasionally prioritize backward passes in high-reward scenarios, suggesting the model learned a \"safe play\" bias rather than true offensive value.",
           "Assuming we had more time and access to a higher-resolution dataset, we would have been interested in further refining our approach. First, we wished we could have conducted a more thorough analysis of our model to determine whether our Q-learning method captured more of the nuances of the game. Additionally, we suspect our approach was highly sensitive to data quality, and we did not allot enough time to clean the data. Finally, we ignored the defensive action space available to the out-of-possession team; analyzing this adjacent but different domain may reveal interesting patterns."
         ],
@@ -191,7 +197,7 @@
                   "alt": "Pass reward heatmap for event 33"
                 }
               ],
-              "caption": "Figure 2: Three examples of a game state and their respective Q-value heatmaps for pass reward. Green dots are teammates, red triangles are opponents, and the white dot is the ball.",
+              "caption": "Figure II: Three examples of a game state and their respective Q-value heatmaps for pass reward. Green dots are teammates, red triangles are opponents, and the white dot is the ball.",
               "wide": true,
               "noBorder": true
             }
@@ -213,11 +219,18 @@
                   "alt": "Dribble reward heatmap for event 33"
                 }
               ],
-              "caption": "Figure 3: Three examples of a game state and their respective Q-value heatmaps for dribbling within a 5m x 5m neighborhood. Green dots are teammates, red triangles are opponents, and the X mark is the ball.",
+              "caption": "Figure III: Three examples of a game state and their respective Q-value heatmaps for dribbling within a 5m x 5m neighborhood. Green dots are teammates, red triangles are opponents, and the X mark is the ball.",
               "wide": true,
               "noBorder": true
             }
           }
+        ]
+      },
+      {
+        "title": "Motivation for the Next Project",
+        "paragraphs": [
+          "This work made it clear that representation quality and observability constraints dominate downstream value estimates: noisy, incomplete snapshots can obscure intent and distort learned action values. In particular, we saw that even when the Q-function fit the Bellman equation, interpretability lagged because the state representation was too brittle to missing context.",
+          "Those insights directly motivated the next project, <a href=\"project.html?slug=soccer-pass-forecast&view=deep\">Learning Spatial Pass Feasibility Under Partial Observability in Soccer</a>. That study isolates the state-construction problem by focusing on dense pass feasibility surfaces and controlled feature ablations, asking what spatial information is actually sufficient for coherent predictions under partial observability. In short, it reframes the lesson from this project into a targeted investigation of state design before returning to value estimation."
         ]
       }
     ]

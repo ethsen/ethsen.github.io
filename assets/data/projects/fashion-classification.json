@@ -11,9 +11,15 @@
     "vision",
     "deep learning"
   ],
+  "mainTags": [
+    "fashion"
+  ],
   "tech": [
     "Python",
     "PyTorch"
+  ],
+  "authors": [
+    "Gbemiga Oloyede"
   ],
   "hideFigures": false,
   "links": [
@@ -21,13 +27,14 @@
       "label": "Repo",
       "href": "https://github.com/ethsen/adv-vision-final-proj",
       "kind": "primary",
-      "icon": "assets/img/github_logo.png",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
     },
     {
       "label": "Report (PDF)",
-      "href": "../assets/docs/Fashion-Classification-Senatore-Bemiga.pdf",
+      "href": "../assets/docs/Fashion-Classification-Senatore-Gbemiga.pdf",
       "kind": "secondary"
     }
   ],
@@ -39,15 +46,16 @@
     "creditHref": "https://giphy.com/hilbrandbos"
   },
   "glance": {
-    "oneLiner": "Designer-level fashion classification that pairs accuracy metrics with interpretability checks to see what the models truly learn.",
-    "problem": "Runway images make designer labels look easy, but models can win by memorizing scene context (lighting, floor texture, venue layout) instead of garment details. We want to separate real garment understanding from background shortcuts.",
-    "approach": "Use the iDesigner runway dataset and compare a standard ResNet family with two lightweight FashionNet variants. We test three training setups: original images, background-removed images, and heavy augmentation. We inspect model attention with Grad-CAM and probe embeddings using nearest-neighbor retrieval to see what features cluster.",
-    "results": "Accuracy is highest on unmasked data, yet attention often lands on the runway rather than the clothing. Masking shifts attention onto garments but reduces accuracy, especially for smaller models. Augmentation recovers some accuracy while only partially reducing background reliance.",
+    "oneLiner": "A designer-level fashion classification study that contrasts accuracy with what models actually attend to and encode\u2014under unmasked, masked, and augmentation-heavy training.",
+    "problem": "Designer labels on runway imagery can be predicted with high accuracy for the wrong reasons: models may exploit stable scene context (runway, lighting, venue cues) rather than garment attributes. The goal is to understand how model capacity affects both performance and the interpretability/semantic quality of learned representations when those shortcuts are reduced.",
+    "approach": "We compare ResNet-18/34/50 baselines (scratch and ImageNet-pretrained) against two lightweight FashionNet variants (Small \u22481M params, Medium \u22485M). We run three phases: (I) unmasked training to surface shortcut behavior, (II) DeepLabV3-ResNet-101 person segmentation to remove background context and force garment-centric learning, and (III) aggressive augmentation on unmasked data as a shortcut-suppression alternative. We analyze models with Grad-CAM and nearest-neighbor retrieval in embedding space.",
+    "results": "Unmasked training yields the best raw accuracy but often highlights runway/background regions in Grad-CAM. Masking shifts attention and nearest-neighbor structure toward garment attributes, but accuracy drops sharply for low-capacity models while larger/pretrained networks remain more robust. Augmentation partially reduces shortcut reliance and recovers some performance, but is less consistent than explicit background removal for producing garment-centric representations.",
     "takeaways": [
-      "Background shortcuts inflate accuracy on runway images; interpretability checks are essential.",
-      "Masking yields cleaner garment-focused features but needs enough model capacity to avoid large accuracy drops.",
-      "Augmentation helps reduce shortcuts, but masking is the stronger push toward garment-centric reasoning.",
-      "Feature-space neighbors cluster by garment cues like color and pattern, not just by scene context."
+      "High runway accuracy can reflect contextual shortcuts; interpretability is required to validate what is learned.",
+      "Segmentation-based masking is a strong shortcut breaker, but it exposes a capacity trade-off (small models degrade most).",
+      "Larger and/or pretrained models better preserve performance under reduced context and yield more semantically meaningful embeddings.",
+      "Augmentation can help, but it does not reliably substitute for explicit background removal.",
+      "Under reduced context, the feature space organizes around garment attributes (color/texture/silhouette), enabling analysis beyond label accuracy."
     ]
   },
   "deep": {
@@ -55,59 +63,63 @@
       {
         "title": "Introduction",
         "paragraphs": [
-          "Fashion imagery blends structured cues (garments, textures, silhouettes) with wide variation in pose, lighting, styling, and scene context. That mix makes fine-grained classification challenging and raises questions about what visual cues models truly rely on.",
-          "We study how model capacity affects both accuracy and interpretability in designer-level classification. Our guiding questions are: how complex a model is needed for strong accuracy, how complex it must be to learn meaningful and interpretable features, and how those features can be used to analyze fashion itself.",
-          "We compare multiple ResNet baselines with a lightweight custom model and probe attention via Grad-CAM and feature-space retrieval. Early high accuracy often reflected background shortcuts; to counter this, we used DeepLab-based segmentation to remove runway context, enabling a cleaner test of garment-centric representations and reframing the later analysis around interpretability under reduced contextual bias."
+          "Fashion imagery combines strong visual structure\u2014garments, textures, and silhouettes\u2014with significant variation in pose, lighting, styling, and scene context. This tension between structure and abstraction makes fine-grained classification challenging, while raising a deeper question: what visual cues do models actually learn when performing fashion recognition?",
+          "This project investigates how model capacity influences both classification accuracy and interpretability in designer-level fashion classification. We ask three guiding questions: how complex a model must be to achieve strong performance, how much capacity is required to learn meaningful and interpretable representations, and how those representations can be used to analyze fashion itself.",
+          "We compare several ResNet baselines against a lightweight custom architecture and examine learned features using Grad-CAM and feature-space retrieval. Early experiments reveal that highly accurate models often rely on contextual shortcuts, particularly runway backgrounds and scene cues. To isolate garment-centric signals, we apply DeepLab-based segmentation to remove background context, reframing the task as a test of representation learning under reduced contextual bias.",
+          "By forcing models to encode images primarily through garment-level features rather than background correlations, this setup enables a more faithful examination of the learned feature space. The resulting embeddings exhibit emergent structure that reflects visual similarity in fashion, offering insight into what models consider \u201csimilar\u201d beyond label accuracy alone. In hindsight, this analysis also highlights the limitations of designer classification as a pretext task, motivating future work toward more self-supervised and fashion-centric objectives."
         ],
         "callout": {
           "label": "Key finding",
-          "text": "Unmasked training yields high accuracy but heavy background reliance. Masking improves garment-centric attention but causes large drops for low-capacity models. Aggressive augmentation helps but does not fully remove shortcuts."
+          "text": "High accuracy on runway images often comes from background and scene shortcuts, not garment understanding. Background removal exposes a capacity-dependent trade-off: larger/pretrained models retain more performance while learning cleaner, garment-centric representations; augmentation helps, but segmentation is the more reliable shortcut breaker."
         }
       },
       {
         "title": "Dataset",
         "paragraphs": [
-          "We use the iDesigner FGVC dataset from CVPR 2019: 50,000 high-resolution runway images labeled by designer across major fashion houses. The diversity of designers makes the task visually rich and fine-grained, while the standard crop keeps substantial runway context around the model."
+          "We use the iDesigner FGVC dataset from CVPR 2019: 50,000 high-resolution runway images labeled by designer across major fashion houses. The diversity of designers makes the task visually rich and fine-grained, while the standard crop keeps substantial runway context around the model.",
+          "We found models (CNN model) often relied on background cues such as runway textures, lighting, and venue architecture rather than garment details. This motivated a background-subtracted variant so performance would reflect garment-level understanding.",
+          "We applied a DeepLab person-segmentation model (trained on COCO) to produce binary masks, remove background pixels, and retain only the model and garments for analysis.",
+          "This segmented dataset provides a cleaner foundation for evaluating the link between model capacity, interpretability, and true visual understanding of fashion features."
         ],
-        "figures": [
+        "inlineFigures": [
           {
-            "gallery": [
-              {
-                "src": "assets/img/projects/fashion-classification/annasui_ds_example.png",
-                "alt": "Unmasked dataset example 1"
-              },
-              {
-                "src": "assets/img/projects/fashion-classification/dior_ds_example.png",
-                "alt": "Unmasked dataset example 2"
-              },
-              {
-                "src": "assets/img/projects/fashion-classification/mcqueen_ds_example.png",
-                "alt": "Unmasked dataset example 3"
-              }
-            ],
-            "caption": "Figure I: Example runway images from the iDesigner dataset.",
-            "wide": true,
-            "noBorder": true
+            "afterParagraph": 0,
+            "figure": {
+              "gallery": [
+                {
+                  "src": "assets/img/projects/fashion-classification/annasui_ds_example.png",
+                  "alt": "Unmasked dataset example 1"
+                },
+                {
+                  "src": "assets/img/projects/fashion-classification/dior_ds_example.png",
+                  "alt": "Unmasked dataset example 2"
+                },
+                {
+                  "src": "assets/img/projects/fashion-classification/mcqueen_ds_example.png",
+                  "alt": "Unmasked dataset example 3"
+                }
+              ],
+              "caption": "Figure I: Example runway images from the iDesigner dataset.",
+              "wide": true,
+              "noBorder": true
+            }
           },
           {
-            "src": "assets/img/projects/fashion-classification/mcqueen_seg_example.png",
-            "alt": "Masked dataset example",
-            "caption": "Figure II: DeepLab segmentation pipeline example (mask and background removal).",
-            "wide": true
+            "afterParagraph": 2,
+            "figure": {
+              "src": "assets/img/projects/fashion-classification/mcqueen_seg_example.png",
+              "alt": "Masked dataset example",
+              "caption": "Figure II: DeepLab segmentation pipeline example (mask and background removal).",
+              "wide": true
+            }
           }
-        ],
-        "afterFirstFigureParagraphs": [
-          "We found models often relied on background cues such as runway textures, lighting, and venue architecture rather than garment details. This motivated a background-subtracted variant so performance would reflect garment-level understanding.",
-          "We applied a DeepLab person-segmentation model (trained on COCO) to produce binary masks, remove background pixels, and retain only the model and garments for analysis."
-        ],
-        "afterParagraphs": [
-          "This segmented dataset provides a cleaner foundation for evaluating the link between model capacity, interpretability, and true visual understanding of fashion features."
         ]
       },
       {
         "title": "Model Architectures",
         "paragraphs": [
-          "We evaluate three families of CNNs: ResNet-18/34/50 baselines and two lightweight custom models, FashionNet-Small and FashionNet-Medium. The custom models are designed to emphasize local textures and silhouettes while remaining more interpretable than large residual networks."
+          "We evaluate three families of CNNs: ResNet-18/34/50 baselines and two lightweight custom models, FashionNet-Small and FashionNet-Medium.",
+          "The FashionNet models are lightweight, purpose-built convolutional architectures designed to study the relationship between model capacity and representation quality. Both variants follow a simple stem-and-stages design, progressively increasing channel width while reducing spatial resolution to move from local texture cues to more global, silhouette-level structure. Global average pooling is used to produce compact feature embeddings, followed by a single linear classifier for designer prediction. The Medium variant widens and slightly deepens each stage relative to the Small model, increasing representational capacity while preserving the same overall architectural philosophy. Full architectural definitions are available in the GitHub repository, and the table below summarizes the number of learnable parameters in each model."
         ],
         "tables": [
           {
@@ -142,17 +154,19 @@
         ]
       },
       {
-        "title": "Methods",
+        "title": "Methods Overview",
         "paragraphs": [
-          "Our methods cover model design, masking and augmentation pipelines, and a shared training/evaluation protocol. We compare ResNet-18/34/50 baselines (scratch and ImageNet-pretrained) against two custom models: FashionNet-Small (~1M params) and FashionNet-Medium (~5M), built to emphasize localized garment cues while remaining more interpretable than large residual networks.",
-          "After midterm analysis showed strong background reliance, we introduced a masking pipeline using DeepLabV3-ResNet-101 (COCO-trained) to isolate the person and remove runway context. We also tested a complementary strategy on unmasked data using heavy augmentation to weaken spurious background correlations.",
-          "All models use cross-entropy loss with SGD or Adam, trained for ~40 epochs with step or cosine schedules based on stability. We report top-1 validation accuracy and interpretability via Grad-CAM and nearest-neighbor retrieval in feature space; occlusion tests yielded similar qualitative trends and are omitted."
-        ],
-        "bullets": [
-          "Phase I: Baseline training on unmasked images to establish accuracy and shortcut risk.",
-          "Phase II: Masked training with background removed to enforce garment-centric learning.",
-          "Phase III: Heavy augmentation on unmasked data to reduce background dependence without re-masking.",
-          "Augmentations: random crop/resize, strong color jitter, flips + perspective transforms, multi-scale random erasing, and coarse noise masks."
+          "Our methodology is organized as a sequence of increasingly constrained training regimes, each motivated by observations from the preceding stage. Across all experiments, we maintain a shared training and evaluation protocol to isolate the effects of architectural choice and data treatment.",
+          "<strong>Phase I: Unmasked Baselines</strong>",
+          "We begin by training all models on unmodified runway images to establish a performance baseline and assess shortcut behavior under standard conditions. This phase reveals that high-capacity models achieve strong accuracy but frequently rely on background and scene context, as evidenced by attention maps and feature similarity patterns.",
+          "This initial stage motivates the remainder of the study by exposing the tension between raw accuracy and meaningful representation learning.",
+          "<strong>Phase II: Masked, Garment-Centric Training</strong>",
+          "This phase reframes designer classification as a test of representation quality under reduced contextual bias. Masked training provides a cleaner lens for interpretability analysis, revealing how different architectures encode texture, shape, and silhouette when background shortcuts are no longer available.",
+          "<strong>Phase III: Augmentation-Driven Shortcut Suppression</strong>",
+          "As a complementary strategy, we explore whether aggressive data augmentation on unmasked images can mitigate background dependence without explicit segmentation. Models are trained with strong spatial and photometric perturbations, including random crops and rescaling, heavy color jitter, perspective transforms, multi-scale random erasing, and coarse noise masks.",
+          "This phase probes whether robustness-inducing augmentations can approximate the benefits of masking while preserving the full visual scene.",
+          "<strong>Training and Evaluation</strong>",
+          "All models are trained using cross-entropy loss with either SGD or Adam, over approximately 40 epochs, with step or cosine learning-rate schedules selected for stability. Performance is evaluated using top-1 validation accuracy, while interpretability is assessed through Grad-CAM visualizations and nearest-neighbor retrieval in feature space. Additional occlusion analyses yielded consistent qualitative trends and are omitted for brevity."
         ]
       },
       {
@@ -161,26 +175,6 @@
           "On the unmasked dataset, pretrained ResNet-50 achieves the best accuracy, and pretraining consistently boosts all ResNet baselines. When trained from scratch, both FashionNet variants outperform scratch ResNets, suggesting the lightweight models readily exploit stable dataset cues."
         ],
         "tablesBeforeFigures": true,
-        "afterTableParagraphs": [
-          "Grad-CAM reveals those gains are not garment-centric: activations frequently concentrate on runway floor, lighting gradients, and peripheral context rather than the clothing. This indicates strong background\u2013label correlations and motivates masking in Phase II."
-        ],
-        "figures": [
-          {
-            "gallery": [
-              {
-                "src": "assets/img/projects/fashion-classification/resnet50_000_input.png",
-                "alt": "Grad-CAM input"
-              },
-              {
-                "src": "assets/img/projects/fashion-classification/resnet50_000_cam.png",
-                "alt": "Grad-CAM result example 2"
-              }
-            ],
-            "caption": "Figure III: Grad-CAM comparisons on unmasked images. On the left is in the input image and on the right is the Grad-Cam output.",
-            "wide": true,
-            "noBorder": true
-          }
-        ],
         "tables": [
           {
             "title": "Table II: Validation accuracy (%) on the unmasked dataset",
@@ -211,30 +205,34 @@
               ]
             ]
           }
-        ]
-      },
-      {
-        "title": "Results: Phase II (Masked)",
-        "paragraphs": [
-          "Masking removes runway context and forces reliance on garment shape, texture, and silhouette. Accuracy drops sharply across all models; pretrained ResNets remain most robust, while FashionNet-Small and -Medium degrade toward chance, signaling capacity limits under garment-only cues."
         ],
-        "tablesBeforeFigures": true,
         "afterTableParagraphs": [
-          "Grad-CAM shifts toward the garment even when masked-trained models are evaluated on unmasked images, suggesting masking encourages less context-dependent representations."
+          "Grad-CAM reveals those gains are not garment-centric: activations frequently concentrate on runway floor, lighting gradients, and peripheral context rather than the clothing. This indicates strong background\u2013label correlations and motivates masking in Phase II."
         ],
         "figures": [
           {
             "gallery": [
               {
-                "src": "assets/img/projects/fashion-classification/resnet50_000_cam_masked.png",
-                "alt": "Grad-CAM result for masked dataset"
+                "src": "assets/img/projects/fashion-classification/resnet50_000_input.png",
+                "alt": "Grad-CAM input"
+              },
+              {
+                "src": "assets/img/projects/fashion-classification/resnet50_000_cam.png",
+                "alt": "Grad-CAM result example 2"
               }
             ],
-            "caption": "Figure IV: Grad-CAM result on masked images.",
+            "caption": "Figure III: Grad-CAM comparisons on unmasked images using ResNet50 Model. On the left is in the input image and on the right is the Grad-Cam output.",
             "wide": true,
             "noBorder": true
           }
+        ]
+      },
+      {
+        "title": "Results: Phase II (Masked)",
+        "paragraphs": [
+          "Masking removes runway context and forces reliance on garment shape, texture, and silhouette. Accuracy drops sharply across all models; pretrained ResNets remain most robust, while FashionNet-Small and Medium degrade toward chance, signaling capacity limits under garment-only cues."
         ],
+        "tablesBeforeFigures": true,
         "tables": [
           {
             "title": "Table III: Validation accuracy (%) on the masked dataset",
@@ -265,6 +263,22 @@
               ]
             ]
           }
+        ],
+        "afterTableParagraphs": [
+          "Grad-CAM shifts toward the garment even when masked-trained models are evaluated on unmasked images, suggesting masking encourages less context-dependent representations."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/projects/fashion-classification/resnet50_000_cam_masked.png",
+                "alt": "Grad-CAM result for masked dataset"
+              }
+            ],
+            "caption": "Figure IV: Grad-CAM result on masked images.",
+            "wide": true,
+            "noBorder": true
+          }
         ]
       },
       {
@@ -273,26 +287,6 @@
           "Heavy augmentation on unmasked images recovers much of the performance lost in the masked setting. Pretrained ResNets remain strong; FashionNet-Medium improves more reliably than FashionNet-Small, indicating modest capacity helps benefit from augmentation."
         ],
         "tablesBeforeFigures": true,
-        "afterTableParagraphs": [
-          "Grad-CAM shows only partial mitigation: attention moves somewhat toward garments, but runway and scene regions still contribute, implying residual contextual shortcuts."
-        ],
-        "figures": [
-          {
-            "gallery": [
-              {
-                "src": "assets/img/projects/fashion-classification/resnet50_000_cam_unmaskedAug.png",
-                "alt": "Augmented Grad-CAM result example 1"
-              },
-              {
-                "src": "assets/img/projects/fashion-classification/resnet50_001_cam_unmaskedAug.png",
-                "alt": "Augmented Grad-CAM result example 2"
-              }
-            ],
-            "caption": "Figure V: Grad-CAM comparisons with heavy augmentation.",
-            "wide": true,
-            "noBorder": true
-          }
-        ],
         "tables": [
           {
             "title": "Table IV: Validation accuracy (%) with strong augmentation on unmasked data",
@@ -323,13 +317,33 @@
               ]
             ]
           }
+        ],
+        "afterTableParagraphs": [
+          "Grad-CAM shows only partial mitigation: attention moves somewhat toward garments, but runway and scene regions still contribute, implying residual contextual shortcuts."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/projects/fashion-classification/resnet50_000_cam_unmaskedAug.png",
+                "alt": "Augmented Grad-CAM result example 1"
+              },
+              {
+                "src": "assets/img/projects/fashion-classification/resnet50_001_cam_unmaskedAug.png",
+                "alt": "Augmented Grad-CAM result example 2"
+              }
+            ],
+            "caption": "Figure V: Grad-CAM comparisons with heavy augmentation.",
+            "wide": true,
+            "noBorder": true
+          }
         ]
       },
       {
         "title": "Feature-Space Interpretability",
         "paragraphs": [
           "To probe what the model learns beyond accuracy, we run nearest-neighbor retrieval in feature space using FashionNet-Medium trained on the masked dataset. We extract penultimate-layer embeddings, normalize them, and compare examples with cosine similarity to retrieve top neighbors from the training set, showing both ground-truth and predicted designer labels.",
-          "Across examples, neighbors often share color palettes, fabric textures, silhouettes, and overall aesthetic structure with the query, even when designer labels differ. Similar layering, drape, or pattern geometry appears repeatedly, suggesting the representation organizes images by visually salient garment attributes rather than coarse scene context. Figure \\ref{fig:nn-examples} shows representative matches.",
+          "Across examples, neighbors often share color palettes, fabric textures, silhouettes, and overall aesthetic structure with the query, even when designer labels differ. Similar layering, drape, or pattern geometry appears repeatedly, suggesting the representation organizes images by visually salient garment attributes rather than coarse scene context. The Figure(s) below shows representative matches.",
           "Importantly, these embeddings come from a model trained only on masked images but evaluated on the original unmasked dataset. Even with background restored, neighbor structure remains garment-focused, reinforcing that masking trades off accuracy but yields a more semantically meaningful feature space for fashion analysis."
         ],
         "figures": [
@@ -357,15 +371,19 @@
             "noBorder": true,
             "autoCycle": 5000
           }
+        ],
+        "afterParagraphs": [
+          "Taken together, this analysis reframes designer classification not as an end goal, but as a vehicle for studying how visual representations emerge under different training constraints. By stripping away contextual shortcuts, the model is encouraged to organize images around garment-level attributes such as color, texture, structure, and silhouette, i.e. properties that align more closely with how fashion is perceived and compared. While this comes at a cost to raw classification accuracy, the resulting feature space offers a clearer window into what the model has learned, revealing structure that is visually meaningful rather than label-driven. In this sense, the project serves less as a benchmark on designer recognition and more as a controlled experiment in representation learning for fashion imagery."
         ]
       },
       {
         "title": "Takeaways",
         "bullets": [
-          "Unmasked training delivers high accuracy but relies heavily on background context rather than garments.",
-          "Segmentation-based masking shifts attention to garment features (Grad-CAM and neighbor retrieval) but hurts low-capacity models.",
-          "Larger and pretrained architectures are more robust when contextual cues are removed.",
-          "Masking is effective for fashion-oriented interpretability, but requires sufficient model capacity to balance accuracy."
+          "Designer classification can look solved on runway data while models still lean on scene context; interpretability checks are necessary.",
+          "Segmentation-based masking is a strong intervention for reducing contextual bias, but it makes capacity limits visible\u2014small models lose accuracy sharply.",
+          "Larger and/or pretrained models are more resilient under garment-only cues and produce more semantically meaningful embeddings for retrieval.",
+          "Heavy augmentation reduces shortcut reliance somewhat, but it does not consistently substitute for explicit background removal.",
+          "The most interesting output is the learned feature space: under reduced context, it organizes images by garment attributes (texture, color, silhouette), suggesting more fashion-centric objectives beyond designer labels."
         ]
       }
     ]

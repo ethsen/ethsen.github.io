@@ -1,0 +1,149 @@
+{
+  "slug": "autonomous-quadrotor-navigation",
+  "title": "Autonomous Quadrotor Navigation in 3D Occupancy Maps",
+  "subtitle": "Integrated planning, trajectory generation, and state estimation for end-to-end autonomy",
+  "summary": "Integrated discretization, search-based planning, trajectory generation, and state estimation into a single autonomous quadrotor navigation pipeline.",
+  "kicker": "robotics",
+  "year": 2025,
+  "featured": false,
+  "thumbnail": "assets/img/projects/autonomous-quadrotor-navigation/3D_Path.png",
+  "tags": [
+    "autonomy",
+    "planning",
+    "state estimation"
+  ],
+  "mainTags": [
+    "robotics"
+  ],
+  "tech": [],
+  "links": [
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/autonomous-quadrotor-navigation.pdf",
+      "kind": "secondary"
+    },
+    {
+      "label": "Repo (TBD)",
+      "href": "https://github.com/ethsen/REPO-TBD",
+      "kind": "primary",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
+    }
+  ],
+  "glance": {
+    "oneLiner": "End-to-end quadrotor autonomy that ties mapping, search, trajectory generation, and estimation into a single navigation stack.",
+    "problem": "Combine the core components of autonomous flight into one pipeline that can plan and navigate safely through a 3D environment.",
+    "approach": "Discretize the environment into voxels, run graph-based search to find collision-free routes, generate feasible trajectories from waypoints, and rely on state estimation to close the loop.",
+    "results": "Delivered a cohesive stack that plans and executes navigation tasks across multiple maps with consistent, collision-free behavior.",
+    "takeaways": [
+      "Integration exposes interface mismatches between planning and control that are invisible in isolation.",
+      "Trajectory quality depends as much on discretization and search settings as on controller tuning.",
+      "Reliable state estimation is a prerequisite for aggressive navigation in cluttered spaces."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Overview",
+        "paragraphs": [
+          "Over the term I built the core pieces needed for autonomous quadrotor navigation: discretizing state space into a voxel grid, applying graph search for collision-free routing, generating trajectories that respect the vehicle's maneuverability, and estimating state from onboard sensing. Each stage was developed and validated independently, revealing how map resolution, heuristics, and motion constraints affect downstream behavior.",
+          "In the final integration, I connected those components into a single pipeline that takes a map, produces a safe waypoint path, and executes a feasible trajectory using state estimation feedback. The focus was on assembling a robust end-to-end system rather than a single algorithm, balancing planning fidelity, trajectory smoothness, and real-time reliability."
+        ]
+      },
+      {
+        "title": "Technical Overview & Implementation",
+        "paragraphs": [
+          "The navigation stack lives across `world_traj.py`, `graph_search.py`, `se3_control.py`, and `vio.py`, with `world_traj.py` bridging planning, trajectory generation, and control. Planning runs an $A^*$ search on a 3D occupancy grid using an $\\ell_2$ heuristic and tuned discretization/obstacle inflation. I settled on a voxel resolution of $[0.25,\\,0.25,\\,0.25]$ m and a 0.5 m margin to keep routes collision-free without exploding the graph.",
+          "Trajectory generation uses minimum-jerk polynomial segments stitched by enforcing continuity in position, velocity, and acceleration, while higher-order boundary terms are set to zero. This yields an $AX=B$ system solved via LU decomposition, producing coefficients that generate position, velocity, acceleration, snap, and jerk references. I targeted a 4 m/s cruise speed and added an end-of-trajectory hold that locks the goal position with zeroed derivatives to eliminate terminal transients.",
+          "Control follows a geometric SE(3) formulation in `se3_control.py`: a PD position law computes desired acceleration and thrust, the desired body $z$-axis aligns with the thrust vector, and a yaw-aligned body $y$-axis completes $R^{des}$. Attitude error and angular-rate damping generate moments, and thrust/moments are mapped to rotor speeds under saturation. This maintained stability while preserving responsiveness in straighter segments.",
+          "State estimation in `vio.py` uses an error-state Kalman filter with an IMU-propagated nominal state and stereo-vision updates. The propagation step integrates angular velocity and specific force, while the update step fuses reprojection residuals to correct drift and update bias terms. Separating nominal and error dynamics keeps the estimator consistent and computationally tractable.",
+          "I also attempted to implement the search-based motion planning approach of Liu et al. (2017) in `world_traj.py` using acceleration-based motion primitives over a position-velocity state. Moving from $\\mathbb{R}^3$ to $\\mathbb{R}^6$ greatly expanded the search space, and without a strictly admissible heuristic the planner can expand indefinitely. I did not stabilize this approach within the project timeframe, but the attempt clarified the computational costs of higher-dimensional planning and the importance of heuristic design. It is a direction I plan to revisit with tighter pruning and more informed cost-to-go bounds."
+        ]
+      },
+      {
+        "title": "Results",
+        "paragraphs": [
+          "Planning and execution times were consistently low across all six maps, with total flight time improving by 63.95 s over my best combined time from the earlier baseline. The gain came primarily from refined terminal handling and a higher maintained cruise speed, along with slightly coarser resolution and margin settings that reduced search overhead without compromising safety."
+        ],
+        "tablesBeforeFigures": true,
+        "tables": [
+          {
+            "title": "Table I: Planning time and flight time by map.",
+            "columns": [
+              "Map",
+              "Planning Time (s)",
+              "Flight Time (s)"
+            ],
+            "rows": [
+              [
+                "Maze",
+                "0.78",
+                "7.03"
+              ],
+              [
+                "Over Under",
+                "2.07",
+                "9.56"
+              ],
+              [
+                "Window",
+                "5.67",
+                "7.71"
+              ],
+              [
+                "Slalom",
+                "3.18",
+                "19.72"
+              ],
+              [
+                "Stairwell",
+                "4.65",
+                "9.96"
+              ],
+              [
+                "Switchback",
+                "2.54",
+                "19.66"
+              ]
+            ]
+          }
+        ],
+        "afterTableParagraphs": [
+          "The biggest conceptual gap between the baseline and this final system is state estimation. Earlier work assumed perfect state knowledge; here the controller relies on estimated pose from an ESKF-driven visual-inertial pipeline. Despite that added uncertainty, the system still executed faster overall, which underscores how much performance can be recovered through careful tuning and robust estimation."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/autonomous-quadrotor-navigation/cov.png",
+            "alt": "Trace of the state covariance matrix",
+            "caption": "Figure I: Trace of the state covariance matrix.",
+            "wide": false,
+            "scale": 0.75,
+            "noBorder": true
+          },
+          {
+            "gallery": [
+              {
+                "src": "assets/img/projects/autonomous-quadrotor-navigation/astar.png",
+                "alt": "A* path, trajectory waypoints, and generated trajectory"
+              },
+              {
+                "src": "assets/img/projects/autonomous-quadrotor-navigation/3D_Path.png",
+                "alt": "Trajectory and flight path"
+              }
+            ],
+            "caption": "Figure II: A* path and waypoint set (left) with the resulting 3D trajectory and flight path (right).",
+            "wide": true,
+            "noBorder": true
+          }
+        ],
+        "afterParagraphs": [
+          "Figure I confirms that the estimator converges quickly: the covariance trace drops early and stabilizes, indicating confidence gains as IMU propagation is corrected by stereo updates. This stability was essential for keeping high-speed segments well-behaved without oscillations.",
+          "Figure II shows the Maze-map plan and execution. The A* path and waypoint set stay conservative around obstacles, while the executed trajectory remains smooth enough to sustain higher speed through tight corridors. I tested smaller margins to try to \"shoot the gap,\" but those settings reduced performance elsewhere, so I kept the margin that balanced safety and consistency across all maps.",
+          "Overall, this project was a concrete lesson in full-stack autonomy: every subsystem mattered, and the final performance reflected how well perception, planning, and control were tuned together. Even when outcomes fell short of the ideal, the process clarified how difficult real-world navigation is and how each layer of the stack contributes to robustness in obstacle-dense environments."
+        ]
+      }
+    ]
+  }
+}

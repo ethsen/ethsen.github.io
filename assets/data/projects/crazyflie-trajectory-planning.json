@@ -8,20 +8,36 @@
   "featured": false,
   "thumbnail": "assets/img/projects/crazyflie-trajectory-planning/thumbnail.png",
   "tags": [
-    "robotics",
     "controls",
-    "planning"
+    "planning",
+    "trajectory"
+  ],
+  "mainTags": [
+    "robotics"
   ],
   "tech": [],
+  "authors": [
+    "Vineet Pasumarti",
+    "Allen Zhou",
+    "Raymond Yang"
+  ],
+  "links": [
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/Crazyflie-Senatore-Pasumarti-Zhou-Yang.pdf",
+      "kind": "secondary"
+    }
+  ],
   "glance": {
-    "oneLiner": "Deployed a controller, waypoint planner, and trajectory generator on a CrazyFlie 2.0 to execute tuned maneuvers and autonomous maze traversal.",
-    "problem": "Ship a stable quadrotor control and planning stack to real hardware, tune gains safely, and validate end-to-end flight through a cluttered maze environment.",
-    "approach": "Two lab sessions: first, tune hover and lateral gains with step responses and validate with a box maneuver and custom waypoint patterns; second, integrate occupancy-map margins and trajectory planning to navigate a maze.",
-    "results": "Achieved stable hover, refined gains for aggressive trajectories, and demonstrated successful maze navigation with smooth path execution.",
+    "oneLiner": "End-to-end CrazyFlie 2.0 stack with tuned control, A* + RDP waypoint planning, and piecewise-linear trajectory execution in a maze.",
+    "problem": "Deliver reliable maze navigation on real hardware by updating gains, planning collision-free paths from a voxel map, and keeping flight stable under VICON feedback and hardware limits.",
+    "approach": "Tuned geometric PD gains on hardware, then generated A* waypoint paths on a 3D occupancy grid, simplified them with RDP, and executed piecewise-linear segments with speed caps and obstacle inflation.",
+    "results": "Stable hover and waypoint tracking were achieved, and full maze runs were executed; tracking errors appeared at sharp turns due to thrust limits, VICON occlusions, and mass-model mismatch.",
     "takeaways": [
-      "Hardware tuning enables more aggressive, reliable trajectories than conservative sim settings.",
-      "VICON feedback provides clean state estimates for tuning and validation.",
-      "Occupancy map margins matter for safe path execution in tight spaces."
+      "Real-world tuning and mass-accurate gains are critical for reliable tracking.",
+      "RDP + piecewise-linear planning is fast but produces $C^0$ trajectories that stress the motors on sharp turns.",
+      "Safety margins and map resolution help avoid collisions but trade off speed and smoothness.",
+      "VICON dropouts can dominate tracking error near obstacles."
     ]
   },
   "deep": {
@@ -29,34 +45,20 @@
       {
         "title": "System Overview",
         "paragraphs": [
-          "This project documents a two-session lab where my team of five deployed a quadrotor controller, waypoint planner, and trajectory generator on real hardware.",
-          "In the first session, we brought the CrazyFlie 2.0 stack online, verified stable hover, and tuned gains with step responses in $z$ and then $x/y$. We validated the controller on a box maneuver and then authored custom waypoints to fly a rectangular spiral before landing.",
-          "In the second session, we pushed the full stack through a maze by planning and executing trajectories. That meant revisiting gains and tightening occupancy-map margins to keep the vehicle safe while still moving quickly. By the end, we showed reliable control and path execution, with hardware tuning enabling more aggressive, smooth flight in cluttered space.",
-          "The CrazyFlie 2.0 itself is tracked by a VICON motion-capture system using reflective markers. VICON provides position and orientation, while onboard accelerometer and gyroscope data are radioed to the lab computers. Our controller runs there, computes desired states, and sends motor commands back to the quadrotor."
+          "This project deploys a full CrazyFlie 2.0 stack on real hardware, spanning a controller, waypoint planner, and trajectory generator, with VICON tracking providing pose feedback and onboard IMU data streamed to the ground station.",
+          "Building on earlier coursework in control and planning, we tuned gains for stable hover and aggressive maneuvers, then executed maze navigation by replanning paths and tightening safety margins to balance speed, smoothness, and collision avoidance."
         ]
       },
       {
         "title": "Methods",
         "paragraphs": [
-          "We used a geometric nonlinear controller that orients the quadrotor body $z$-axis along the desired thrust direction, which supports aggressive maneuvers but requires careful gain and damping tuning. Following the Project 1.1 handout, we start with the PD position law:",
-          "$$\\ddot{r}^{des} = \\ddot{r}_T - K_d(\\dot{r}-\\dot{r}_T) - K_p(r-r_T).$$",
-          "To generate the desired acceleration, the inputs $u_1$ and $u_2$ satisfy:",
-          "$$m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\mg\\end{bmatrix} = u_1 R \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}.$$",
-          "The left-hand side is the desired force plus gravity, so we define:",
-          "$$F^{des} = m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}, \\quad u_1 = R\\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}F^{des}.$$",
-          "For $u_2$, we align the thrust vector with the desired body $z$-axis:",
-          "$$c_3^{des} = \\frac{F^{des}}{\\lVert F^{des} \\rVert}.$$",
-          "We then align the body $y$-axis with the desired yaw direction while maintaining orthogonality. Define:",
-          "$$a_\\psi = \\begin{bmatrix}\\cos\\psi_T\\\\\\sin\\psi_T\\\\0\\end{bmatrix}.$$",
-          "Then compute:",
-          "$$c_2^{des} = \\frac{c_3^{des}\\times a_\\psi}{\\lVert c_3^{des}\\times a_\\psi \\rVert}, \\quad R^{des} = \\begin{bmatrix}c_2^{des} \\times c_3^{des} & c_2^{des} & c_3^{des}\\end{bmatrix}.$$",
-          "The attitude and angular velocity errors are:",
-          "$$e_R = \\frac{1}{2}(R^{des^T}R - R^T R^{des})^\\vee, \\quad e_\\omega = \\omega - \\omega^{des}.$$",
-          "Finally, the moment command is:",
-          "$$u_2 = I(-K_R e_R - K_\\omega e_\\omega).$$",
-          "We tuned four gains in simulation and then finalized them during hardware tests. The values below are the diagonals of 3x3 gain matrices.",
-          "Intuitively, we treated $K_p$ as positional importance, $K_d$ as how quickly we converge to position, $K_R$ as orientation importance, and $K_\\omega$ as how quickly we converge to orientation. Hardware testing required scaling gains down by about 30%, and additional tuning across lab sessions addressed model mismatch, sim fidelity gaps, and controller implementation quirks."
+          "We use a geometric nonlinear controller that aligns the body $z$-axis with the desired thrust direction. The PD position law is $$\\ddot{r}^{des} = \\ddot{r}_T - K_d(\\dot{r}-\\dot{r}_T) - K_p(r-r_T).$$",
+          "Desired acceleration and thrust satisfy $$m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\mg\\end{bmatrix} = u_1 R \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix},$$ so we define $$F^{des} = m\\ddot{r}^{des} + \\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}, \\quad u_1 = R\\begin{bmatrix}0\\\\0\\\\1\\end{bmatrix}F^{des}.$$",
+          "Orientation is set by aligning thrust with the desired body axis and yaw with the target heading: $$c_3^{des} = \\frac{F^{des}}{\\lVert F^{des} \\rVert}, \\quad a_\\psi = \\begin{bmatrix}\\cos\\psi_T\\\\\\sin\\psi_T\\\\0\\end{bmatrix},$$ $$c_2^{des} = \\frac{c_3^{des}\\times a_\\psi}{\\lVert c_3^{des}\\times a_\\psi \\rVert}, \\quad R^{des} = \\begin{bmatrix}c_2^{des} \\times c_3^{des} & c_2^{des} & c_3^{des}\\end{bmatrix}.$$",
+          "The attitude error and angular velocity error are $$e_R = \\frac{1}{2}(R^{des^T}R - R^T R^{des})^\\vee, \\quad e_\\omega = \\omega - \\omega^{des},$$ and the moment command is $$u_2 = I(-K_R e_R - K_\\omega e_\\omega).$$",
+          "We tuned four gains in simulation and then finalized them on hardware. The values below are the diagonals of 3x3 gain matrices, with gains scaled down about 30% from simulation to account for mass and actuation differences."
         ],
+        "tablesBeforeFigures": true,
         "tables": [
           {
             "title": "Finalized gain values after tuning.",
@@ -93,14 +95,78 @@
           {
             "src": "assets/img/projects/crazyflie-trajectory-planning/stepy-plot.png",
             "alt": "Step tuning test in y direction",
-            "caption": "Step tuning test in the y direction.",
+            "caption": "Figure I: Step tuning test in the y direction.",
             "wide": false,
             "scale": 0.8,
             "noBorder": true
           }
         ],
         "afterParagraphs": [
-          "The y-direction step test indicates a settling time around 2 s, a rise time around 1.1 s, steady-state error near 2%, and a damping ratio near 0.4. The response is underdamped and initially slow to settle, and we also observed a mismatch in the z-direction that was fixed by retuning in lab 2. Our tuning loop was straightforward: run a test, adjust gains, and repeat until performance stabilized."
+          "The y-direction step test indicates a settling time around 2 s, a rise time around 1.1 s, steady-state error near 2%, and a damping ratio near 0.4. The response is underdamped and initially slow to settle, and we also observed a z-axis mismatch that was corrected with additional hardware tuning."
+        ]
+      },
+      {
+        "title": "Trajectory Generation",
+        "paragraphs": [
+          "We discretize the workspace into a voxel occupancy grid and plan a waypoint path with A* over the 3D graph. Edge cost is Euclidean distance and the heuristic is the $\\ell_2$ distance to the goal: $$c(\\text{current}, \\text{neighbor}) = \\bigl\\lVert \\text{neighbor} - \\text{current} \\bigr\\rVert, \\quad h(n) = \\bigl\\lVert n - \\text{goal} \\bigr\\rVert, \\quad f(n) = g(n) + h(n).$$ The search expands the lowest-cost node, relaxes neighbors, and backtracks parent pointers to recover a discrete path in $(x,y,z)$.",
+          "We simplify the path with Ramer-Douglas-Peucker using $\\varepsilon = 0.1\\,\\text{m}$, then generate a piecewise linear trajectory between waypoints: $$\\mathbf{x}(t) = \\mathbf{p}_i + \\mathbf{v}_i (t - t_{\\mathrm{start}, i}), \\quad \\mathbf{v}_i = v_i\\,\\frac{\\mathbf{p}_{i+1} - \\mathbf{p}_i}{\\lVert \\mathbf{p}_{i+1} - \\mathbf{p}_i \\rVert}, \\quad T_i = \\frac{\\lVert \\mathbf{p}_{i+1} - \\mathbf{p}_i \\rVert}{v_i}.$$",
+          "Because each segment uses constant velocity, the trajectory is $C^0$-continuous and exhibits velocity jumps at segment boundaries. We mitigate this by capping speed below 1 m/s and adjusting $v_i$ based on segment length and turn angle. With a 0.2 m obstacle inflation margin and $\\Delta x = \\Delta y = \\Delta z = 0.25\\,\\text{m}$ resolution, the resulting waypoints remain safely away from obstacles while keeping computation fast."
+        ],
+        "figures": [
+          {
+            "gallery": [
+              {
+                "src": "assets/img/projects/crazyflie-trajectory-planning/waypoints.png",
+                "alt": "Discrete waypoints and path"
+              },
+              {
+                "src": "assets/img/projects/crazyflie-trajectory-planning/3D_Path.png",
+                "alt": "3D quadrotor trajectory"
+              }
+            ],
+            "caption": "Figure II: Discrete waypoints and path (left) with the 3D quadrotor trajectory (right).",
+            "wide": true,
+            "noBorder": true
+          },
+          {
+            "src": "assets/img/projects/crazyflie-trajectory-planning/xva_time.png",
+            "alt": "Position, velocity, and acceleration log",
+            "caption": "Figure III: Position, velocity, and acceleration log.",
+            "wide": false,
+            "scale": 0.8,
+            "noBorder": true
+          }
+        ]
+      },
+      {
+        "title": "Maze Flight Experiments",
+        "paragraphs": [
+          "We ran three maze flights and compared planned paths against logged trajectories. Figure IV shows Maps 1-3 (left to right) with world obstacles, planned trajectories, waypoints, and actual flight paths.",
+          "Across all three maps we observe deviations between the planned trajectory and the flown path, especially near sharp turns and obstacle-adjacent maneuvers. The main drivers are limited thrust (curvature tracking limits), VICON occlusions that cause brief state-estimation dropouts, and small mass mismatches that degrade PID tuning during faster segments.",
+          "To improve reliability and speed, we would retune gains using real mass and logs, adopt higher-order spline trajectories to smooth velocity and acceleration, and increase map resolution for more precise path optimization. With more time, adaptive gain scheduling based on tracking error could further stabilize flight through the maze while preserving speed."
+        ],
+        "figures": [
+          {
+            "src": "assets/img/projects/crazyflie-trajectory-planning/Map1-3.png",
+            "alt": "Maze 1-3 with obstacles, waypoints, planned trajectories, and actual flight paths",
+            "caption": "Figure IV: Maze 1-3 (left to right) with world obstacles, waypoints, planned trajectories, and actual flight paths.",
+            "wide": true,
+            "noBorder": true
+          },
+          {
+            "src": "assets/img/projects/crazyflie-trajectory-planning/Map 2 Actual Position and Velocity.png",
+            "alt": "Map 2 actual position and velocity",
+            "caption": "Figure V: Map 2 actual position and velocity.",
+            "wide": false,
+            "scale": 1.0,
+            "noBorder": true
+          }
+        ]
+      },
+      {
+        "title": "Takeaways",
+        "paragraphs": [
+          "This project shows that a full CrazyFlie planning and control stack can succeed on real hardware when perception, planning, and control are tuned together. The dominant errors came from hardware limits and state-estimation dropouts rather than the planner, reinforcing the need for gain tuning with real mass/logs, safety margins aligned with motor limits and estimation jitter, and smoother trajectories to avoid sudden thrust demands."
         ]
       }
     ]

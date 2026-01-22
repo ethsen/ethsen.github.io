@@ -8,9 +8,11 @@
   "featured": false,
   "thumbnail": "assets/img/projects/ukf-orientation-estimation/thumbnail.png",
   "tags": [
-    "robotics",
     "state estimation",
     "sensor fusion"
+  ],
+  "mainTags": [
+    "robotics"
   ],
   "tech": [
     "Python",
@@ -21,7 +23,8 @@
       "label": "Repo",
       "href": "https://github.com/ethsen/EKF-UKF",
       "kind": "primary",
-      "icon": "assets/img/github_logo.png",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
     }
@@ -57,7 +60,6 @@
         "paragraphs": [
           "Sensor calibration starts from the affine conversion used for both accelerometer and gyroscope, $$\\text{value} = (\\text{raw} - \\text{bias})\\,\\frac{3300\\,\\text{mV}}{1023\\cdot \\text{sensitivity}}.$$ For the accelerometer, I treat the expected specific force as gravity in the body frame and compute $$\\mathbf{a}^{\\text{true}}_t = R_t\\,\\mathbf{g}, \\quad \\mathbf{g} = [0, 0, 9.81]^{\\top}\\,\\text{m/s}^2.$$ I then fit a per-axis linear model $a^{\\text{true}} \\approx x_0\\,a^{\\text{raw}} + x_1$ via least squares and recover $$\\text{sensitivity} = \\frac{3300\\,\\text{mV}}{1023\\,x_0}, \\quad \\text{bias} = -\\frac{x_1}{x_0}.$$ To reduce noise, I keep only samples with sufficient gravity projection per axis and validate calibration with roll/pitch estimates, $$\\hat{\\phi} = \\mathrm{atan2}(a_y, a_z), \\quad \\hat{\\theta} = \\mathrm{atan2}(-a_x, \\sqrt{a_y^2 + a_z^2}).$$",
           "Table 1 summarizes the calibrated bias and sensitivity values used for both sensors. Keeping them explicit makes it clear how the affine conversion maps raw ADC counts into physical units.",
-          "Table 2 lists the per-dataset accelerometer thresholds used for least-squares fitting. These cutoffs suppress low-excitation regions and reduce the influence of noisy measurements in the bias/scale fit.",
           "Gyroscope calibration uses motion-capture rotations to derive angular velocity. Given successive rotations, $$\\Delta R_t = R_{t+\\Delta} R_t^\\top,$$ I map $\\Delta R_t$ to a quaternion $q = (q_0, q_1, q_2, q_3)$, compute $$\\theta = 2\\,\\arccos(q_0), \\quad \\hat{\\mathbf{x}} = (q_1, q_2, q_3),$$ and approximate $$\\boldsymbol{\\omega}^{\\text{true}}_t \\approx \\frac{\\hat{\\mathbf{x}}\\,\\theta}{\\Delta t}.$$ I select $\\Delta t \\approx 0.15$ s to avoid noisy differentiation, then fit the same affine model and apply a unit conversion from deg/s to rad/s in the sensitivity term.",
           "The UKF state is a unit quaternion orientation plus a 3D angular velocity, with uncertainty represented in a 6D tangent space. Sigma points are generated in this perturbation space, mapped to quaternions via axis--angle, and propagated using the measured time step with $$\\mathbf{q}_{t+\\Delta t} = \\mathbf{q}_t \\otimes \\delta\\mathbf{q}(\\boldsymbol{\\omega}\\Delta t).$$ Angular velocity is updated additively.",
           "Quaternion means are computed by iterative error averaging: relative rotations are mapped to axis--angle errors, averaged, and applied until the mean error is small. This produces a valid mean orientation and a covariance consistent with the manifold.",
@@ -100,7 +102,15 @@
                 "182.891"
               ]
             ]
-          },
+          }
+        ]
+      },
+      {
+        "title": "Calibration Thresholds",
+        "paragraphs": [
+          "Table 2 lists the per-dataset accelerometer thresholds used for least-squares fitting. These cutoffs suppress low-excitation regions and reduce the influence of noisy measurements in the bias/scale fit."
+        ],
+        "tables": [
           {
             "title": "Table 2: Accelerometer threshold values used for least-squares fitting (m/s^2).",
             "columns": [
@@ -130,8 +140,7 @@
               ]
             ]
           }
-        ],
-        "tablesBeforeFigures": true
+        ]
       },
       {
         "title": "Results",

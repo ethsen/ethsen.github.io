@@ -13,9 +13,35 @@
         "vision",
         "deep learning"
       ],
+      "mainTags": [
+        "fashion"
+      ],
       "tech": [
         "Python",
         "PyTorch"
+      ]
+    },
+    {
+      "slug": "beat-the-expert-il-rl",
+      "title": "Beat-the-Expert: An IL-RL Framework to Outperform Expert Racing Policies",
+      "subtitle": "Bootstrapping PPO with HG-DAGGER imitation learning for F1TENTH racing",
+      "summary": "Bootstrapped PPO with a pre-trained HG-DAGGER policy to improve sample efficiency in autonomous racing, surpassing the easiest expert demonstration but falling short on harder expert traces.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/projects/beat-the-expert-il-rl/thumbnail.png",
+      "tags": [
+        "imitation learning",
+        "autonomous racing"
+      ],
+      "mainTags": [
+        "robotics",
+        "reinforcement learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch",
+        "F1TENTH"
       ]
     },
     {
@@ -28,9 +54,12 @@
       "featured": true,
       "thumbnail": "assets/img/projects/soccer-pass-forecast/thumbnail.png",
       "tags": [
-        "sports",
         "deep learning",
-        "vision"
+        "vision",
+        "spatial modeling"
+      ],
+      "mainTags": [
+        "sports"
       ],
       "tech": [
         "PyTorch",
@@ -47,9 +76,12 @@
       "featured": false,
       "thumbnail": "assets/img/projects/socceriq-function/thumbnail.jpg",
       "tags": [
+        "offline RL",
+        "value estimation"
+      ],
+      "mainTags": [
         "sports",
-        "reinforcement learning",
-        "deep learning"
+        "reinforcement learning"
       ],
       "tech": [
         "Python",
@@ -66,9 +98,11 @@
       "featured": false,
       "thumbnail": "assets/img/projects/particle-filter-slam/thumbnail.png",
       "tags": [
-        "robotics",
         "slam",
         "localization"
+      ],
+      "mainTags": [
+        "robotics"
       ],
       "tech": [
         "Python",
@@ -85,9 +119,31 @@
       "featured": false,
       "thumbnail": "assets/img/projects/crazyflie-trajectory-planning/thumbnail.png",
       "tags": [
-        "robotics",
         "controls",
-        "planning"
+        "planning",
+        "trajectory"
+      ],
+      "mainTags": [
+        "robotics"
+      ],
+      "tech": []
+    },
+    {
+      "slug": "autonomous-quadrotor-navigation",
+      "title": "Autonomous Quadrotor Navigation in 3D Occupancy Maps",
+      "subtitle": "Integrated planning, trajectory generation, and state estimation for end-to-end autonomy",
+      "summary": "Integrated discretization, search-based planning, trajectory generation, and state estimation into a single autonomous quadrotor navigation pipeline.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/autonomous-quadrotor-navigation/3D_Path.png",
+      "tags": [
+        "autonomy",
+        "planning",
+        "state estimation"
+      ],
+      "mainTags": [
+        "robotics"
       ],
       "tech": []
     },
@@ -101,9 +157,11 @@
       "featured": false,
       "thumbnail": "assets/img/projects/ukf-orientation-estimation/thumbnail.png",
       "tags": [
-        "robotics",
         "state estimation",
         "sensor fusion"
+      ],
+      "mainTags": [
+        "robotics"
       ],
       "tech": [
         "Python",

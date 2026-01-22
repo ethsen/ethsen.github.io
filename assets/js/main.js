@@ -24,6 +24,9 @@
     root.classList.toggle("theme-dark", isDark);
     toggle.textContent = isDark ? "Light mode" : "Dark mode";
     toggle.setAttribute("aria-pressed", isDark ? "true" : "false");
+    if (typeof window.updateThemeIcons === "function") {
+      window.updateThemeIcons();
+    }
   };
 
   applyTheme(initialDark);

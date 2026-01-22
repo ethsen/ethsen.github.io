@@ -150,6 +150,15 @@ code{
 }
 a{ color: inherit; text-decoration: none; }
 a:hover{ text-decoration: none; }
+.proj-body a{
+  color: var(--accent, #1f8bff);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 2px;
+}
+.proj-body a:hover{
+  text-decoration-thickness: 3px;
+}
 
 .skip{
   position:absolute; left:-999px; top:auto;
@@ -534,6 +543,9 @@ a:hover{ text-decoration: none; }
   margin-top: 4px;
   font-size: 0.78rem;
 }
+.hero-authors{
+  margin-top: 6px;
+}
 .hero-credit a{
   color: var(--muted);
   text-decoration: none;
@@ -614,6 +626,10 @@ a:hover{ text-decoration: none; }
   gap: 36px;
   align-items:start;
   padding-bottom: 34px;
+}
+.article-wrap.article-wrap--single{
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
 }
 .page-project .btn{
   background: rgba(255,255,255,0.72);
@@ -753,7 +769,7 @@ a:hover{ text-decoration: none; }
   border: 1px solid var(--line2);
   background: var(--panel);
   box-shadow: var(--shadow);
-  padding: 12px;
+  padding: 6px 8px;
 }
 .gallery__track{
   display:grid;
@@ -762,7 +778,7 @@ a:hover{ text-decoration: none; }
   gap: 12px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding-bottom: 6px;
+  padding-bottom: 0;
 }
 .gallery__track img{
   width: 100%;
@@ -932,14 +948,16 @@ a:hover{ text-decoration: none; }
 }
 .proj[data-slug="soccer-pass-forecast"] .proj__thumb,
 .proj[data-slug="socceriq-function"] .proj__thumb,
-.proj[data-slug="particle-filter-slam"] .proj__thumb{
+.proj[data-slug="particle-filter-slam"] .proj__thumb,
+.proj[data-slug="autonomous-quadrotor-navigation"] .proj__thumb{
   padding: 0;
   border: none;
   background: transparent;
 }
 .proj[data-slug="soccer-pass-forecast"] .proj__thumb img,
 .proj[data-slug="socceriq-function"] .proj__thumb img,
-.proj[data-slug="particle-filter-slam"] .proj__thumb img{
+.proj[data-slug="particle-filter-slam"] .proj__thumb img,
+.proj[data-slug="autonomous-quadrotor-navigation"] .proj__thumb img{
   object-fit: contain;
   background: transparent;
 }
@@ -1048,6 +1066,10 @@ a:hover{ text-decoration: none; }
 .proj-body--deep .block + .block{
   margin-top: 18px;
 }
+.proj-body--deep .proj-body-spacer{
+  height: 30vh;
+  min-height: 220px;
+}
 .figures{
   display:grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -1083,18 +1105,15 @@ a:hover{ text-decoration: none; }
 }
 .pager__frame{
   width: 100%;
-  aspect-ratio: 16 / 9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--panel2);
-  border: 1px solid var(--line2);
+  display: block;
+  background: transparent;
+  border: none;
   border-radius: var(--radius2);
   overflow: hidden;
 }
 .pager__img{
   width: 100%;
-  height: 100%;
+  height: auto;
   object-fit: contain;
   display: block;
 }
@@ -1161,7 +1180,7 @@ a:hover{ text-decoration: none; }
   background: transparent;
 }
 .figure figcaption{
-  padding: 8px 10px 10px;
+  padding: 4px 8px 6px;
   font-size: 0.9rem;
   color: var(--muted);
   background: var(--panel);
