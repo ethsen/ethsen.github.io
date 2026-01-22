@@ -734,7 +734,12 @@ async function initProjectPage() {
       if (p.heroOverlay.motion === "random") {
         startRandomOverlay(overlay, p.heroOverlay.motionOptions || {});
       } else if (p.heroOverlay.animate) {
+        const loopDelay = p.heroOverlay.speed === "fast" ? 3500 : 7000;
+        const loopTimer = window.setTimeout(() => {
+          overlay.classList.add("hero-overlay--loop");
+        }, loopDelay + 120);
         overlay.addEventListener("animationend", () => {
+          window.clearTimeout(loopTimer);
           overlay.classList.add("hero-overlay--loop");
         }, { once: true });
       }
