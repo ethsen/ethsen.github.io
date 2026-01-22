@@ -18,18 +18,18 @@
   "tech": [],
   "links": [
     {
-      "label": "Report (PDF)",
-      "href": "../assets/docs/autonomous-quadrotor-navigation.pdf",
-      "kind": "secondary"
-    },
-    {
       "label": "Repo (TBD)",
-      "href": "https://github.com/ethsen/REPO-TBD",
+      "href": "https://github.com/ethsen/Autonomous-Quadrotor-Navigation-in-3D-Occupancy-Maps",
       "kind": "primary",
       "icon": "assets/img/GitHub_Invertocat_Black.png",
       "iconDark": "assets/img/GitHub_Invertocat_White.png",
       "iconAlt": "GitHub",
       "iconOnly": true
+    },
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/autonomous-quadrotor-navigation.pdf",
+      "kind": "secondary"
     }
   ],
   "glance": {

@@ -227,12 +227,44 @@ function getParam(name) {
   return url.searchParams.get(name);
 }
 
+function isGithubLink(link) {
+  if (!link) return false;
+  const href = String(link.href || "").toLowerCase();
+  const label = String(link.label || "").toLowerCase();
+  const iconAlt = String(link.iconAlt || "").toLowerCase();
+  return href.includes("github.com")
+    || iconAlt.includes("github")
+    || label.includes("github")
+    || /\brepo\b/.test(label);
+}
+
+function isReportLink(link) {
+  if (!link) return false;
+  const label = String(link.label || "").toLowerCase();
+  return label.includes("report");
+}
+
 function renderLinks(links) {
   const wrap = document.getElementById("proj-links");
   if (!wrap) return;
 
   wrap.innerHTML = "";
-  (links || []).forEach(l => {
+  let orderedLinks = links || [];
+  const hasGithub = orderedLinks.some(isGithubLink);
+  const hasReport = orderedLinks.some(isReportLink);
+  if (hasGithub && hasReport) {
+    const githubLinks = [];
+    const reportLinks = [];
+    const restLinks = [];
+    orderedLinks.forEach(l => {
+      if (isGithubLink(l)) githubLinks.push(l);
+      else if (isReportLink(l)) reportLinks.push(l);
+      else restLinks.push(l);
+    });
+    orderedLinks = [...githubLinks, ...reportLinks, ...restLinks];
+  }
+
+  orderedLinks.forEach(l => {
     const href = safeLink(l.href);
     if (!href) return;
 
