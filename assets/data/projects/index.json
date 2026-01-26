@@ -22,29 +22,6 @@
       ]
     },
     {
-      "slug": "beat-the-expert-il-rl",
-      "title": "Beat-the-Expert: An IL-RL Framework to Outperform Expert Racing Policies",
-      "subtitle": "Bootstrapping PPO with HG-DAGGER imitation learning for F1TENTH racing",
-      "summary": "Bootstrapped PPO with a pre-trained HG-DAGGER policy to improve sample efficiency in autonomous racing, surpassing the easiest expert demonstration but falling short on harder expert traces.",
-      "kicker": "robotics",
-      "year": 2025,
-      "featured": true,
-      "thumbnail": "assets/img/projects/beat-the-expert-il-rl/thumbnail.png",
-      "tags": [
-        "imitation learning",
-        "autonomous racing"
-      ],
-      "mainTags": [
-        "robotics",
-        "reinforcement learning"
-      ],
-      "tech": [
-        "Python",
-        "PyTorch",
-        "F1TENTH"
-      ]
-    },
-    {
       "slug": "soccer-pass-forecast",
       "title": "Learning Spatial Pass Feasibility Under Partial Observability in Soccer",
       "subtitle": "Estimating pass feasibility from sparse freeze-frame state tensors",
@@ -64,6 +41,49 @@
       "tech": [
         "PyTorch",
         "StatsBomb"
+      ]
+    },
+    {
+      "slug": "autonomous-quadrotor-navigation",
+      "title": "Autonomous Quadrotor Navigation in 3D Occupancy Maps",
+      "subtitle": "Integrated planning, trajectory generation, and state estimation for end-to-end autonomy",
+      "summary": "Integrated discretization, search-based planning, trajectory generation, and state estimation into a single autonomous quadrotor navigation pipeline.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/autonomous-quadrotor-navigation/3D_Path.png",
+      "tags": [
+        "autonomy",
+        "planning",
+        "state estimation"
+      ],
+      "mainTags": [
+        "robotics"
+      ],
+      "tech": []
+    },
+    
+    {
+      "slug": "beat-the-expert-il-rl",
+      "title": "Beat-the-Expert: An IL-RL Framework to Outperform Expert Racing Policies",
+      "subtitle": "Bootstrapping PPO with HG-DAGGER imitation learning for F1TENTH racing",
+      "summary": "Bootstrapped PPO with a pre-trained HG-DAGGER policy to improve sample efficiency in autonomous racing, surpassing the easiest expert demonstration but falling short on harder expert traces.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/beat-the-expert-il-rl/thumbnail.png",
+      "tags": [
+        "imitation learning",
+        "autonomous racing"
+      ],
+      "mainTags": [
+        "robotics",
+        "reinforcement learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch",
+        "F1TENTH"
       ]
     },
     {
@@ -128,25 +148,7 @@
       ],
       "tech": []
     },
-    {
-      "slug": "autonomous-quadrotor-navigation",
-      "title": "Autonomous Quadrotor Navigation in 3D Occupancy Maps",
-      "subtitle": "Integrated planning, trajectory generation, and state estimation for end-to-end autonomy",
-      "summary": "Integrated discretization, search-based planning, trajectory generation, and state estimation into a single autonomous quadrotor navigation pipeline.",
-      "kicker": "robotics",
-      "year": 2025,
-      "featured": false,
-      "thumbnail": "assets/img/projects/autonomous-quadrotor-navigation/3D_Path.png",
-      "tags": [
-        "autonomy",
-        "planning",
-        "state estimation"
-      ],
-      "mainTags": [
-        "robotics"
-      ],
-      "tech": []
-    },
+    
     {
       "slug": "ukf-orientation-estimation",
       "title": "Unscented Kalman Filtering for 3D Orientation Estimation",

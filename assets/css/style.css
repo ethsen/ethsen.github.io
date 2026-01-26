@@ -770,7 +770,7 @@ a:hover{ text-decoration: none; }
 }
 .about__figure--left,
 .about__figure--right{
-  max-width: 340px;
+  max-width: 420px;
 }
 .about__figure--art{
   max-width: 420px;
