@@ -1,5 +1,6 @@
 let projectsIndexCachePromise = null;
 const projectCache = new Map();
+let heroBannerFadeCleanup = null;
 
 async function loadProjectsIndex() {
   if (!projectsIndexCachePromise) {
@@ -45,6 +46,30 @@ function el(tag, attrs = {}, children = []) {
   }
   for (const child of children) node.appendChild(child);
   return node;
+}
+
+function escapeRegExp(str) {
+  return String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function stripHtml(str) {
+  return String(str || "").replace(/<[^>]*>/g, "").trim();
+}
+
+function slugify(str) {
+  return String(str || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
 }
 
 function safeLink(href) {
@@ -317,7 +342,9 @@ function updateThemeIcons() {
 window.updateThemeIcons = updateThemeIcons;
 
 function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
-  const block = el("section", { class: "block" });
+  const blockAttrs = { class: "block" };
+  if (opts.className) blockAttrs.class += ` ${opts.className}`;
+  const block = el("section", blockAttrs);
   if (opts.id) block.id = opts.id;
   const headingTag = opts.headingTag || "h2";
   if (title) block.appendChild(el(headingTag, { text: title }));
@@ -332,15 +359,68 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
       inlineMap.get(entry.afterParagraph).push(entry.figure);
     });
   }
+  const inlineTables = Array.isArray(opts.inlineTables) ? opts.inlineTables : null;
+  const tableMap = new Map();
+  if (inlineTables) {
+    inlineTables.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number" || !entry.table) return;
+      if (!tableMap.has(entry.afterParagraph)) tableMap.set(entry.afterParagraph, []);
+      tableMap.get(entry.afterParagraph).push(entry.table);
+    });
+  }
+  const inlineQuotes = Array.isArray(opts.inlineQuotes) ? opts.inlineQuotes : null;
+  const quoteMap = new Map();
+  if (inlineQuotes) {
+    inlineQuotes.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number") return;
+      if (!entry.paragraphs && !entry.lines) return;
+      if (!quoteMap.has(entry.afterParagraph)) quoteMap.set(entry.afterParagraph, []);
+      quoteMap.get(entry.afterParagraph).push(entry);
+    });
+  }
+  const inlineSubtitles = Array.isArray(opts.inlineSubtitles) ? opts.inlineSubtitles : null;
+  const subtitleMap = new Map();
+  if (inlineSubtitles) {
+    inlineSubtitles.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number" || !entry.text) return;
+      if (!subtitleMap.has(entry.afterParagraph)) subtitleMap.set(entry.afterParagraph, []);
+      subtitleMap.get(entry.afterParagraph).push(entry);
+    });
+  }
+  if (opts.figureRefs instanceof Map && quoteMap.size) {
+    quoteMap.forEach(entries => {
+      entries.forEach(entry => {
+        entry.figureRefs = opts.figureRefs;
+        entry.tableRefs = opts.tableRefs || null;
+      });
+    });
+  }
   paragraphs.filter(Boolean).forEach((p, idx) => {
-    const useHtml = typeof p === "string" && (p.includes("<strong>") || p.includes("<a "));
-    const node = el("p", useHtml ? { html: p } : { text: p });
+    const node = renderLinkedParagraph(p, opts.figureRefs || null, opts.tableRefs || null);
     paraEls.push(node);
     block.appendChild(node);
     if (inlineMap.has(idx)) {
       inlineMap.get(idx).forEach(fig => {
         const figNode = renderFigure(fig);
         if (figNode) block.appendChild(figNode);
+      });
+    }
+    if (tableMap.has(idx)) {
+      tableMap.get(idx).forEach(tbl => {
+        const tblNode = renderTable(tbl);
+        if (tblNode) block.appendChild(tblNode);
+      });
+    }
+    if (quoteMap.has(idx)) {
+      quoteMap.get(idx).forEach(quote => {
+        const quoteNode = renderQuote(quote);
+        if (quoteNode) block.appendChild(quoteNode);
+      });
+    }
+    if (subtitleMap.has(idx)) {
+      subtitleMap.get(idx).forEach(subtitle => {
+        const subtitleNode = renderInlineSubtitle(subtitle);
+        if (subtitleNode) block.appendChild(subtitleNode);
       });
     }
   });
@@ -364,7 +444,276 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
     block.appendChild(callout);
   }
 
+  bindInlineFootnotes(block, opts.footnotes || null);
   return block;
+}
+
+function renderLinkedParagraph(text, figureRefs = null, tableRefs = null) {
+  const useHtml = typeof text === "string" && /<[^>]+>/.test(text);
+  const node = el("p", useHtml ? { html: text } : { text: text });
+  linkProjectReferences(node, figureRefs, tableRefs);
+  return node;
+}
+
+function appendLinkedParagraphs(parent, paragraphs = [], figureRefs = null, tableRefs = null) {
+  if (!parent || !Array.isArray(paragraphs) || !paragraphs.length) return;
+  paragraphs.filter(Boolean).forEach(text => {
+    parent.appendChild(renderLinkedParagraph(text, figureRefs, tableRefs));
+  });
+}
+
+function renderInlineSubtitle(subtitle) {
+  if (!subtitle?.text) return null;
+  const useHtml = typeof subtitle.text === "string" && /<[^>]+>/.test(subtitle.text);
+  return el(subtitle.tag || "h3", {
+    class: "block__subtitle",
+    ...(useHtml ? { html: subtitle.text } : { text: subtitle.text })
+  });
+}
+
+function renderQuote(quote) {
+  if (!quote) return null;
+  const lines = Array.isArray(quote.paragraphs) ? quote.paragraphs : quote.lines;
+  if (!Array.isArray(lines) || !lines.length) return null;
+
+  const classes = ["proj-quote"];
+  if (quote.variant === "questions") classes.push("proj-quote--questions");
+  else if (quote.variant === "plain") classes.push("proj-quote--plain");
+  else classes.push("proj-quote--thought");
+  if (quote.compact) classes.push("proj-quote--compact");
+  const attrs = { class: classes.join(" ") };
+  if (quote.variant !== "plain" && quote.variant !== "questions") {
+    attrs.style = [
+      `--quote-orb-x: ${12 + Math.round(Math.random() * 72)}%`,
+      `--quote-orb-y: ${12 + Math.round(Math.random() * 68)}%`,
+      `--quote-orb2-x: ${10 + Math.round(Math.random() * 74)}%`,
+      `--quote-orb2-y: ${10 + Math.round(Math.random() * 72)}%`,
+      `--quote-angle: ${120 + Math.round(Math.random() * 60)}deg`
+    ].join("; ");
+  }
+  const node = el("blockquote", attrs);
+  lines.filter(Boolean).forEach(line => {
+    const useHtml = typeof line === "string" && /<[^>]+>/.test(line);
+    const p = el("p", useHtml ? { html: line } : { text: line });
+    linkProjectReferences(p, quote.figureRefs || null, quote.tableRefs || null);
+    node.appendChild(p);
+  });
+  return node;
+}
+
+function getFigurePreviewSrc(fig) {
+  if (!fig) return null;
+  if (fig.previewSrc) return fig.previewSrc;
+  if (fig.src) return fig.src;
+  if (Array.isArray(fig.images) && fig.images[0]?.src) return fig.images[0].src;
+  if (Array.isArray(fig.gallery) && fig.gallery[0]?.src) return fig.gallery[0].src;
+  if (Array.isArray(fig.pager) && fig.pager[0]?.src) return fig.pager[0].src;
+  return null;
+}
+
+function getFigureMeta(fig) {
+  if (!fig) return { id: null, refLabel: null };
+  if (fig.id || fig.refLabel) {
+    return {
+      id: fig.id || (fig.refLabel ? slugify(fig.refLabel) : null),
+      refLabel: fig.refLabel || null
+    };
+  }
+  const caption = stripHtml(fig.caption || "");
+  const match = caption.match(/^(Figure\s+[A-Za-z0-9IVXLCM]+(?:[–-][A-Za-z0-9IVXLCM]+)?)/i);
+  if (!match) return { id: null, refLabel: null };
+  const refLabel = match[1].replace(/\s+/g, " ").trim();
+  return {
+    id: slugify(refLabel),
+    refLabel
+  };
+}
+
+function getTableMeta(table) {
+  if (!table) return { id: null, refLabel: null };
+  if (table.id || table.refLabel) {
+    return {
+      id: table.id || (table.refLabel ? slugify(table.refLabel) : null),
+      refLabel: table.refLabel || null
+    };
+  }
+  const title = stripHtml(table.title || "");
+  const match = title.match(/^(Table\s+[A-Za-z0-9IVXLCM]+(?:[–-][A-Za-z0-9IVXLCM]+)?)/i);
+  if (!match) return { id: null, refLabel: null };
+  const refLabel = match[1].replace(/\s+/g, " ").trim();
+  return {
+    id: slugify(refLabel),
+    refLabel
+  };
+}
+
+function getFigurePreviewItems(fig) {
+  if (!fig) return [];
+  if (Array.isArray(fig.images) && fig.images.length) {
+    return fig.images
+      .filter(item => item?.src)
+      .map(item => ({ src: assetUrl(item.src), alt: item.alt || fig.caption || "Project figure" }));
+  }
+  const single = getFigurePreviewSrc(fig);
+  if (!single) return [];
+  return [{ src: assetUrl(single), alt: fig.alt || fig.caption || "Project figure" }];
+}
+
+function collectFigureRefs(figures = []) {
+  const refs = new Map();
+  figures.filter(Boolean).forEach(fig => {
+    const meta = getFigureMeta(fig);
+    if (!meta.id || !meta.refLabel) return;
+    const previewSrc = getFigurePreviewSrc(fig);
+    refs.set(meta.refLabel, {
+      id: meta.id,
+      label: meta.refLabel,
+      previewSrc: previewSrc ? assetUrl(previewSrc) : null,
+      previewItems: getFigurePreviewItems(fig),
+      previewAlt: fig.alt || fig.caption || meta.refLabel
+    });
+  });
+  return refs;
+}
+
+function collectTableRefs(tables = []) {
+  const refs = new Map();
+  tables.filter(Boolean).forEach(table => {
+    const meta = getTableMeta(table);
+    if (!meta.id || !meta.refLabel) return;
+    refs.set(meta.refLabel, {
+      id: meta.id,
+      label: meta.refLabel
+    });
+  });
+  return refs;
+}
+
+function collectBlockFigureEntries(figures = null, opts = {}) {
+  const entries = [];
+  if (Array.isArray(figures)) entries.push(...figures);
+  if (Array.isArray(opts.inlineFigures)) {
+    opts.inlineFigures.forEach(entry => {
+      if (entry?.figure) entries.push(entry.figure);
+    });
+  }
+  return entries;
+}
+
+function renderFigurePreviewHtml(ref, suffix = "") {
+  const items = Array.isArray(ref.previewItems) ? ref.previewItems : [];
+  if (!items.length) return "";
+  const suffixMatch = /^\(([a-z])\)$/.exec(suffix || "");
+  if (suffixMatch) {
+    const idx = suffixMatch[1].charCodeAt(0) - 97;
+    const item = items[idx] || items[0];
+    return `<span class="figure-ref__preview" aria-hidden="true"><img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt || "")}"></span>`;
+  }
+  if (items.length === 1) {
+    const item = items[0];
+    return `<span class="figure-ref__preview" aria-hidden="true"><img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt || "")}"></span>`;
+  }
+  const imgs = items.map(item => `<img src="${escapeHtml(item.src)}" alt="${escapeHtml(item.alt || "")}">`).join("");
+  return `<span class="figure-ref__preview figure-ref__preview--grid" aria-hidden="true"><span class="figure-ref__preview-grid">${imgs}</span></span>`;
+}
+
+function linkFigureReferences(node, figureRefs) {
+  if (!node || !(figureRefs instanceof Map) || !figureRefs.size) return;
+  let html = node.innerHTML;
+  const labels = [...figureRefs.keys()].sort((a, b) => b.length - a.length);
+  labels.forEach(label => {
+    const ref = figureRefs.get(label);
+    const re = new RegExp(`(${escapeRegExp(label)})(?![A-Z0-9])(\\([a-z]\\))?`, "g");
+    html = html.replace(re, (_m, base, suffix = "") => {
+      const shown = `${base}${suffix}`;
+      const preview = renderFigurePreviewHtml(ref, suffix);
+      return `<a class="doc-ref figure-ref" href="#${ref.id}" data-figure-ref="${base}"><span class="figure-ref__label">${shown}</span>${preview}</a>`;
+    });
+  });
+  node.innerHTML = html;
+}
+
+function linkTableReferences(node, tableRefs) {
+  if (!node || !(tableRefs instanceof Map) || !tableRefs.size) return;
+  let html = node.innerHTML;
+  const labels = [...tableRefs.keys()].sort((a, b) => b.length - a.length);
+  labels.forEach(label => {
+    const ref = tableRefs.get(label);
+    const re = new RegExp(`(${escapeRegExp(label)})(?![A-Z0-9])(\\([a-z]\\))?`, "g");
+    html = html.replace(re, (_m, base, suffix = "") => {
+      const shown = `${base}${suffix}`;
+      return `<a class="doc-ref table-ref" href="#${ref.id}" data-table-ref="${base}">${shown}</a>`;
+    });
+  });
+  node.innerHTML = html;
+}
+
+function linkProjectReferences(node, figureRefs, tableRefs) {
+  linkFigureReferences(node, figureRefs);
+  linkTableReferences(node, tableRefs);
+}
+
+function collectBlockTableEntries(tables = null, opts = {}) {
+  const entries = [];
+  if (Array.isArray(tables)) entries.push(...tables);
+  if (Array.isArray(opts.inlineTables)) {
+    opts.inlineTables.forEach(entry => {
+      if (entry?.table) entries.push(entry.table);
+    });
+  }
+  return entries;
+}
+
+function bindHeroBannerFade(hero, banner) {
+  if (typeof heroBannerFadeCleanup === "function") {
+    heroBannerFadeCleanup();
+    heroBannerFadeCleanup = null;
+  }
+  if (!hero || !banner || typeof window === "undefined") return;
+
+  let rafId = 0;
+  const update = () => {
+    rafId = 0;
+    const rect = hero.getBoundingClientRect();
+    const fadeDistance = Math.max(220, Math.min(420, rect.height * 0.75));
+    const progress = Math.max(0, Math.min(1, -rect.top / fadeDistance));
+    const opacity = 0.56 - progress * 0.46;
+    const translateY = progress * 18;
+    banner.style.opacity = String(Math.max(0.08, opacity));
+    banner.style.transform = `translateX(-50%) translateY(${translateY}px)`;
+  };
+
+  const requestUpdate = () => {
+    if (rafId) return;
+    rafId = window.requestAnimationFrame(update);
+  };
+
+  window.addEventListener("scroll", requestUpdate, { passive: true });
+  window.addEventListener("resize", requestUpdate);
+  requestUpdate();
+
+  heroBannerFadeCleanup = () => {
+    window.removeEventListener("scroll", requestUpdate);
+    window.removeEventListener("resize", requestUpdate);
+    if (rafId) window.cancelAnimationFrame(rafId);
+  };
+}
+
+function bindInlineFootnotes(block, footnotes) {
+  if (!block || !Array.isArray(footnotes) || !footnotes.length) return;
+  const footnoteMap = new Map(
+    footnotes.map(note => [String(note.number), Array.isArray(note.paragraphs) ? note.paragraphs.join(" ") : (note.text || "")])
+  );
+
+  block.querySelectorAll(".fn-ref").forEach(ref => {
+    const key = (ref.textContent || "").trim();
+    const text = footnoteMap.get(key);
+    if (!text) return;
+    ref.setAttribute("data-footnote", text);
+    ref.setAttribute("tabindex", "0");
+    ref.setAttribute("role", "note");
+    ref.setAttribute("aria-label", `Footnote ${key}: ${text}`);
+  });
 }
 
 function typesetMath(root) {
@@ -434,7 +783,14 @@ function renderFigure(fig) {
       class: "pager__img",
       "data-pager-id": pagerId
     });
-    const frame = el("div", { class: "pager__frame" }, [img]);
+    const frameClasses = ["pager__frame"];
+    const frameAttrs = {};
+    if (fig.frameAspect) {
+      frameClasses.push("pager__frame--fixed");
+      frameAttrs.style = `--pager-aspect: ${fig.frameAspect};`;
+    }
+    frameAttrs.class = frameClasses.join(" ");
+    const frame = el("div", frameAttrs, [img]);
     const updateImage = (index) => {
       const item = fig.pager[index];
       if (!item?.src) return;
@@ -488,11 +844,20 @@ function renderFigure(fig) {
     const grid = el("div", gridAttrs);
     fig.images.forEach(i => {
       if (!i?.src) return;
-      grid.appendChild(el("img", {
+      const img = el("img", {
         src: assetUrl(i.src),
         alt: i.alt || fig.caption || "Project figure",
         loading: "lazy"
-      }));
+      });
+      if (i.caption) {
+        const useHtmlSubcaption = typeof i.caption === "string" && /<[^>]+>/.test(i.caption);
+        grid.appendChild(el("figure", { class: "figure__grid-item" }, [
+          img,
+          el("figcaption", useHtmlSubcaption ? { html: i.caption } : { text: i.caption })
+        ]));
+      } else {
+        grid.appendChild(img);
+      }
     });
     media = grid;
   } else if (fig.src) {
@@ -505,12 +870,17 @@ function renderFigure(fig) {
     return null;
   }
   const children = [media];
-  if (fig.caption) children.push(el("figcaption", { text: fig.caption }));
+  if (fig.caption) {
+    const useHtmlCaption = typeof fig.caption === "string" && /<[^>]+>/.test(fig.caption);
+    children.push(el("figcaption", useHtmlCaption ? { html: fig.caption } : { text: fig.caption }));
+  }
   const classes = ["figure"];
   if (fig.wide) classes.push("figure--wide");
   if (fig.noBorder) classes.push("figure--no-border");
   if (Array.isArray(fig.gallery) && fig.gallery.length === 1) classes.push("figure--gallery-single");
   const attrs = { class: classes.join(" ") };
+  const meta = getFigureMeta(fig);
+  if (meta.id) attrs.id = meta.id;
   if (typeof fig.scale === "number" && fig.scale > 0 && fig.scale !== 1) {
     attrs.style = `width: ${Math.round(fig.scale * 100)}%; margin-left: auto; margin-right: auto;`;
   }
@@ -526,7 +896,12 @@ function renderFigures(figures) {
 
 function renderTable(table) {
   if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return null;
-  const wrap = el("div", { class: "table" });
+  const wrapClasses = ["table"];
+  if (table.wide) wrapClasses.push("table--wide");
+  if (table.compact) wrapClasses.push("table--compact");
+  const wrap = el("div", { class: wrapClasses.join(" ") });
+  const meta = getTableMeta(table);
+  if (meta.id) wrap.id = meta.id;
 
   const t = el("table");
   const thead = el("thead");
@@ -537,13 +912,47 @@ function renderTable(table) {
 
   const tbody = el("tbody");
   table.rows.forEach(r => {
-    const row = el("tr");
-    r.forEach(cell => row.appendChild(el("td", { text: String(cell) })));
+    if (Array.isArray(r)) {
+      const row = el("tr");
+      r.forEach(cell => row.appendChild(el("td", { text: String(cell) })));
+      tbody.appendChild(row);
+      return;
+    }
+    if (!r || typeof r !== "object") return;
+    if (r.type === "section") {
+      const sectionClasses = ["table__section"];
+      if (r.tone) sectionClasses.push(`table__section--${r.tone}`);
+      const row = el("tr", { class: sectionClasses.join(" ") });
+      row.appendChild(el("td", {
+        colspan: table.columns.length,
+        html: r.label || ""
+      }));
+      tbody.appendChild(row);
+      return;
+    }
+    if (!Array.isArray(r.cells)) return;
+    const rowClasses = [];
+    if (r.tone) rowClasses.push(`table__row--${r.tone}`);
+    const row = el("tr", rowClasses.length ? { class: rowClasses.join(" ") } : {});
+    r.cells.forEach(cell => {
+      const isCellObj = cell && typeof cell === "object" && !Array.isArray(cell);
+      const tag = isCellObj && cell.header ? "th" : "td";
+      const attrs = {};
+      const value = isCellObj ? (cell.html ?? cell.text ?? "") : cell;
+      if (isCellObj && cell.className) attrs.class = cell.className;
+      const useHtml = typeof value === "string" && /<[^>]+>/.test(value);
+      row.appendChild(el(tag, useHtml ? { ...attrs, html: String(value) } : { ...attrs, text: String(value) }));
+    });
     tbody.appendChild(row);
   });
   t.appendChild(tbody);
   wrap.appendChild(t);
-  if (table.title) wrap.appendChild(el("div", { class: "table__caption", text: table.title }));
+  if (table.title) {
+    const useHtmlTitle = typeof table.title === "string" && /<[^>]+>/.test(table.title);
+    wrap.appendChild(el("div", { class: "table__caption" }, [
+      el("span", useHtmlTitle ? { html: table.title } : { text: table.title })
+    ]));
+  }
   return wrap;
 }
 
@@ -555,64 +964,24 @@ function renderTables(tables) {
 }
 
 function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures = null, tables = null, opts = {}) {
-  const block = renderBlock(title, paragraphs, bullets, opts);
-  const inlineAfterParagraphFigures = Array.isArray(opts.inlineAfterParagraphFigures)
-    ? opts.inlineAfterParagraphFigures
-    : null;
-  const afterParaMap = new Map();
-  if (inlineAfterParagraphFigures) {
-    inlineAfterParagraphFigures.forEach(entry => {
-      if (!entry || typeof entry.afterParagraph !== "number" || !entry.figure) return;
-      if (!afterParaMap.has(entry.afterParagraph)) afterParaMap.set(entry.afterParagraph, []);
-      afterParaMap.get(entry.afterParagraph).push(entry.figure);
-    });
-  }
-
-  if (Array.isArray(opts.inlineFigures) && opts.inlineFigures.length) {
-    if (opts.tablesBeforeFigures) {
-      const tbls = renderTables(tables);
-      if (tbls) block.appendChild(tbls);
-    }
-    if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
-      opts.afterTableParagraphs.filter(Boolean).forEach(p => {
-        block.appendChild(el("p", { text: p }));
-      });
-    }
-    if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
-      opts.afterParagraphs.filter(Boolean).forEach(p => {
-        block.appendChild(el("p", { text: p }));
-      });
-    }
-    if (!opts.tablesBeforeFigures) {
-      const tbls = renderTables(tables);
-      if (tbls) block.appendChild(tbls);
-    }
-    return block;
-  }
+  const figureRefEntries = collectBlockFigureEntries(figures, opts);
+  const figureRefs = opts.figureRefs instanceof Map ? opts.figureRefs : collectFigureRefs(figureRefEntries);
+  const tableRefEntries = collectBlockTableEntries(tables, opts);
+  const tableRefs = opts.tableRefs instanceof Map ? opts.tableRefs : collectTableRefs(tableRefEntries);
+  const block = renderBlock(title, paragraphs, bullets, {
+    ...opts,
+    figureRefs,
+    tableRefs
+  });
 
   if (opts.tablesBeforeFigures) {
     const tbls = renderTables(tables);
     if (tbls) block.appendChild(tbls);
   }
-  if (Array.isArray(opts.afterTableParagraphs) && opts.afterTableParagraphs.length) {
-    opts.afterTableParagraphs.filter(Boolean).forEach(p => {
-      block.appendChild(el("p", { text: p }));
-    });
-  }
+  appendLinkedParagraphs(block, opts.afterTableParagraphs || null, figureRefs, tableRefs);
   const figs = renderFigures(figures);
   if (figs) block.appendChild(figs);
-
-  if (Array.isArray(opts.afterParagraphs) && opts.afterParagraphs.length) {
-    opts.afterParagraphs.filter(Boolean).forEach((p, idx) => {
-      block.appendChild(el("p", { text: p }));
-      if (afterParaMap.has(idx)) {
-        afterParaMap.get(idx).forEach(fig => {
-          const figNode = renderFigure(fig);
-          if (figNode) block.appendChild(figNode);
-        });
-      }
-    });
-  }
+  appendLinkedParagraphs(block, opts.afterParagraphs || null, figureRefs, tableRefs);
 
   if (!opts.tablesBeforeFigures) {
     const tbls = renderTables(tables);
@@ -623,6 +992,7 @@ function renderBlockWithFigures(title, paragraphs = [], bullets = null, figures 
 
 function initTocHighlight(sectionIds) {
   if (!sectionIds?.length) return;
+  if (!sectionIds.length) return;
   const tocLinks = new Map();
   sectionIds.forEach(id => {
     const link = document.querySelector(`#proj-toc a[href="#${id}"]`);
@@ -663,6 +1033,77 @@ function initTocHighlight(sectionIds) {
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll);
   onScroll();
+}
+
+function collectViewFigureRefs(project, view) {
+  if (!project) return new Map();
+  const entries = [];
+
+  if (view === "glance") {
+    const glanceBlocks = [
+      { figures: project.glance?.problemFigures },
+      { figures: project.glance?.approachFigures },
+      { figures: project.glance?.resultsFigures },
+      { figures: project.glance?.takeawayFigures }
+    ];
+    glanceBlocks.forEach(block => {
+      entries.push(...collectBlockFigureEntries(block.figures, block));
+    });
+    return collectFigureRefs(entries);
+  }
+
+  const deepSections = collectProjectSections(project);
+  if (deepSections.length) {
+    deepSections.forEach(section => {
+      entries.push(...collectBlockFigureEntries(section.figures || null, {
+        inlineFigures: section.inlineFigures || null
+      }));
+    });
+    return collectFigureRefs(entries);
+  }
+  return collectFigureRefs(entries);
+}
+
+function collectViewTableRefs(project, view) {
+  if (!project) return new Map();
+  const entries = [];
+
+  if (view === "glance") {
+    const glanceBlocks = [
+      { tables: project.glance?.problemTables },
+      { tables: project.glance?.approachTables },
+      { tables: project.glance?.resultsTables },
+      { tables: project.glance?.takeawayTables }
+    ];
+    glanceBlocks.forEach(block => {
+      entries.push(...collectBlockTableEntries(block.tables, block));
+    });
+    return collectTableRefs(entries);
+  }
+
+  const deepSections = collectProjectSections(project);
+  if (deepSections.length) {
+    deepSections.forEach(section => {
+      entries.push(...collectBlockTableEntries(section.tables || null, {
+        inlineTables: section.inlineTables || null
+      }));
+    });
+    return collectTableRefs(entries);
+  }
+  return collectTableRefs(entries);
+}
+
+function collectProjectSections(project) {
+  const sections = Array.isArray(project?.deep?.sections) ? [...project.deep.sections] : [];
+  if (Array.isArray(project?.references) && project.references.length) {
+    sections.push({
+      title: "References",
+      paragraphs: project.references
+        .map(ref => ref?.html || ref?.text || "")
+        .filter(Boolean)
+    });
+  }
+  return sections;
 }
 
 async function initProjectPage() {
@@ -717,7 +1158,24 @@ async function initProjectPage() {
 
   const hero = document.querySelector(".article-hero");
   if (hero) {
+    if (typeof heroBannerFadeCleanup === "function") {
+      heroBannerFadeCleanup();
+      heroBannerFadeCleanup = null;
+    }
     hero.querySelectorAll(".hero-overlay").forEach(node => node.remove());
+    hero.querySelectorAll(".hero-banner-figure").forEach(node => node.remove());
+    hero.classList.toggle("article-hero--with-banner", Boolean(p.heroFigure?.src));
+    if (p.heroFigure?.src) {
+      const heroFig = renderFigure({
+        ...p.heroFigure,
+        caption: null
+      });
+      if (heroFig) {
+        heroFig.classList.add("hero-banner-figure");
+        hero.insertBefore(heroFig, hero.firstChild);
+        bindHeroBannerFade(hero, heroFig);
+      }
+    }
     if (p.heroOverlay?.src) {
       const useDark = document.documentElement.classList.contains("theme-dark");
       const overlaySrc = (!useDark && p.heroOverlay.srcDark) ? p.heroOverlay.srcDark : p.heroOverlay.src;
@@ -780,7 +1238,6 @@ async function initProjectPage() {
 
   // Body
   const body = document.getElementById("proj-body");
-  const hideFigures = Boolean(p.hideFigures);
 
   const renderView = (nextView) => {
     view = nextView;
@@ -793,58 +1250,53 @@ async function initProjectPage() {
     const toc = document.getElementById("proj-toc");
     const aside = document.getElementById("proj-aside");
     const wrap = document.querySelector(".article-wrap");
+    const deepSections = collectProjectSections(p);
+    const viewFigureRefs = collectViewFigureRefs(p, view);
+    const viewTableRefs = collectViewTableRefs(p, view);
     if (toc) toc.innerHTML = "";
     if (aside) aside.hidden = view !== "deep";
     if (wrap) wrap.classList.toggle("article-wrap--single", view === "glance");
 
     if (view === "glance") {
       const problemLines = [p.glance?.oneLiner, p.glance?.problem || p.summary].filter(Boolean);
-      body.appendChild(renderBlockWithFigures("Problem statement", problemLines, null, hideFigures ? null : p.glance?.problemFigures || null, p.glance?.problemTables || null, { lede: true }));
-      body.appendChild(renderBlockWithFigures("Approach", [p.glance?.approach || "" ], p.glance?.approachBullets || null, hideFigures ? null : p.glance?.approachFigures || null, p.glance?.approachTables || null));
-      body.appendChild(renderBlockWithFigures("Results", [p.glance?.results || "" ], p.glance?.resultsBullets || null, hideFigures ? null : p.glance?.resultsFigures || null, p.glance?.resultsTables || null));
+      body.appendChild(renderBlockWithFigures("Problem statement", problemLines, null, p.glance?.problemFigures || null, p.glance?.problemTables || null, { lede: true, figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
+      body.appendChild(renderBlockWithFigures("Approach", [p.glance?.approach || "" ], p.glance?.approachBullets || null, p.glance?.approachFigures || null, p.glance?.approachTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
+      body.appendChild(renderBlockWithFigures("Results", [p.glance?.results || "" ], p.glance?.resultsBullets || null, p.glance?.resultsFigures || null, p.glance?.resultsTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
 
       if (p.glance?.takeaways?.length) {
-        body.appendChild(renderBlockWithFigures("Key takeaways", [], p.glance.takeaways, hideFigures ? null : p.glance?.takeawayFigures || null, p.glance?.takeawayTables || null));
+        body.appendChild(renderBlockWithFigures("Key takeaways", [], p.glance.takeaways, p.glance?.takeawayFigures || null, p.glance?.takeawayTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
       }
     } else {
       const sectionIds = [];
-      if (Array.isArray(p.deep?.sections) && p.deep.sections.length) {
-        p.deep.sections.forEach((s, idx) => {
-          const sectionId = s.title ? s.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") : "";
-          if (toc && s.title) toc.appendChild(el("a", { href: `#${sectionId}`, text: s.title }));
-          if (sectionId) sectionIds.push(sectionId);
-          body.appendChild(renderBlockWithFigures(
-            s.title || "",
-            s.paragraphs || [],
-            s.bullets || null,
-            hideFigures ? null : s.figures || null,
-            s.tables || null,
-            {
-              id: sectionId || undefined,
-              lede: idx === 0,
-              callout: s.callout || null,
-              afterParagraphs: s.afterParagraphs || null,
-              afterTableParagraphs: s.afterTableParagraphs || null,
-              tablesBeforeFigures: Boolean(s.tablesBeforeFigures),
-              inlineFigures: s.inlineFigures || null,
-              inlineAfterParagraphFigures: s.inlineAfterParagraphFigures || null
-            }
-          ));
-        });
-        body.appendChild(el("div", { class: "proj-body-spacer", "aria-hidden": "true" }));
-        initTocHighlight(sectionIds);
-      } else {
-        body.appendChild(renderBlockWithFigures("Overview", [
-          p.deep?.overview || p.subtitle || p.summary || ""
-        ], null, hideFigures ? null : p.deep?.overviewFigures || null, p.deep?.overviewTables || null, { lede: true }));
-
-        if (p.deep?.methods) body.appendChild(renderBlockWithFigures("Methods", [p.deep.methods], p.deep.methodsBullets || null, hideFigures ? null : p.deep?.methodsFigures || null, p.deep?.methodsTables || null));
-        if (p.deep?.data) body.appendChild(renderBlockWithFigures("Data", [p.deep.data], p.deep.dataBullets || null, hideFigures ? null : p.deep?.dataFigures || null, p.deep?.dataTables || null));
-        if (p.deep?.experiments) body.appendChild(renderBlockWithFigures("Experiments", [p.deep.experiments], p.deep.experimentsBullets || null, hideFigures ? null : p.deep?.experimentsFigures || null, p.deep?.experimentsTables || null));
-        if (p.deep?.notes) body.appendChild(renderBlockWithFigures("Notes", [p.deep.notes], p.deep.notesBullets || null, hideFigures ? null : p.deep?.notesFigures || null, p.deep?.notesTables || null));
-
-        if (p.deep?.futureWork?.length) body.appendChild(renderBlockWithFigures("Future work", [], p.deep.futureWork, hideFigures ? null : p.deep?.futureWorkFigures || null, p.deep?.futureWorkTables || null));
-      }
+      deepSections.forEach((s, idx) => {
+        const sectionId = s.title ? s.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") : "";
+        if (toc && s.title) toc.appendChild(el("a", { href: `#${sectionId}`, text: s.title }));
+        if (sectionId) sectionIds.push(sectionId);
+        body.appendChild(renderBlockWithFigures(
+          s.title || "",
+          s.paragraphs || [],
+          s.bullets || null,
+          s.figures || null,
+          s.tables || null,
+          {
+            id: sectionId || undefined,
+            lede: idx === 0,
+            figureRefs: viewFigureRefs,
+            tableRefs: viewTableRefs,
+            callout: s.callout || null,
+            afterParagraphs: s.afterParagraphs || null,
+            afterTableParagraphs: s.afterTableParagraphs || null,
+            tablesBeforeFigures: Boolean(s.tablesBeforeFigures),
+            inlineFigures: s.inlineFigures || null,
+            inlineTables: s.inlineTables || null,
+            footnotes: s.footnotes || null,
+            inlineQuotes: s.inlineQuotes || null,
+            inlineSubtitles: s.inlineSubtitles || null
+          }
+        ));
+      });
+      body.appendChild(el("div", { class: "proj-body-spacer", "aria-hidden": "true" }));
+      initTocHighlight(sectionIds);
     }
     typesetMath(body);
     if (typeof window.bindLightboxImages === "function") window.bindLightboxImages();

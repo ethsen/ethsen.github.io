@@ -23,7 +23,6 @@
   "authors": [
     "Vineet Pasumarti"
   ],
-  "hideFigures": false,
   "links": [
     {
       "label": "Report (PDF)",
@@ -215,14 +214,17 @@
           {
             "src": "assets/img/projects/beat-the-expert-il-rl/f1tenth_hamilton_bar.png",
             "alt": "Lap time comparison for expert and RL policies",
-            "caption": "Figure 2: Comparison of lap times for expert demonstrators and RL agents. Bootstrapped RL agents show similar performance and are outperformed by the end-to-end RL agent; only the easy expert is surpassed.",
+            "caption": "Figure 3: Comparison of lap times for expert demonstrators and RL agents. Bootstrapped RL agents show similar performance and are outperformed by the end-to-end RL agent; only the easy expert is surpassed.",
             "wide": true
           }
-        ],
-        "afterParagraphs": [
+        ]
+      },
+      {
+        "title": "Cross-Track Generalization",
+        "paragraphs": [
           "End-to-end RL generalizes reasonably across tracks without map memorization, completing most circuits but struggling on technical layouts like Spa and Hockenheim where tight, blind corners reduce completion rates. This likely reflects the reactive nature of the policy, which depends on immediate LiDAR input without longer-horizon planning."
         ],
-        "inlineAfterParagraphFigures": [
+        "inlineFigures": [
           {
             "afterParagraph": 0,
             "figure": {
@@ -236,7 +238,7 @@
                   "alt": "Spa-Francorchamps track"
                 }
               ],
-              "caption": "Figure 3: Tracks where the end-to-end policy struggles due to tight, technical corners (Hockenheim and Spa-Francorchamps).",
+              "caption": "Figure 4: Tracks where the end-to-end policy struggles due to tight, technical corners (Hockenheim and Spa-Francorchamps).",
               "wide": true,
               "noBorder": true
             }

@@ -1,6 +1,28 @@
 {
   "projects": [
     {
+      "slug": "variational-autoencoders",
+      "title": "VAEs for Visual Abstraction in Art",
+      "subtitle": "Studying compression, latent structure, and downstream usefulness across VAE variants",
+      "summary": "This project studies how VAEs learn representations of art through structured latent spaces. Using classification and latent space analysis, we explore how visual abstractions emerge and how these representations can be interpreted.",
+      "kicker": "generative modeling",
+      "year": 2026,
+      "featured": true,
+      "thumbnail": "assets/img/projects/variational-autoencoders/project_header_grid.png",
+      "tags": [
+        "generative modeling",
+        "vision",
+        "deep learning"
+      ],
+      "mainTags": [
+        "art"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch"
+      ]
+    },
+    {
       "slug": "fashion-classification",
       "title": "Accuracy vs. Interpretability in Designer-Level Fashion Classification",
       "subtitle": "Designer-level fashion classification with interpretability analysis",

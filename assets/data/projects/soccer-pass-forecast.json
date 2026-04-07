@@ -19,7 +19,6 @@
     "PyTorch",
     "StatsBomb"
   ],
-  "hideFigures": false,
   "links": [
     {
       "label": "Repo",
@@ -138,7 +137,7 @@
         ]
       },
       {
-        "title": "Results and Conclusion",
+        "title": "Results",
         "paragraphs": [
           "We evaluate models using quantitative metrics and qualitative inspection of predicted probability surfaces. Because the goal is to study spatial representations under partial observability, quantitative metrics serve primarily for controlled comparison and sanity checking, while qualitative analysis is central to interpreting model behavior.",
           "The model separates destination selection from pass completion conditioned on a destination. For completion, we evaluate the predicted probability at the ground-truth destination using negative log-likelihood (Succ@Dest NLL) and area under the ROC curve (Succ@Dest AUC). For destination prediction, we report Dest NLL and Dest Top-10 accuracy. Because destination selection is multi-modal and discretized, these metrics are interpreted cautiously.Quantitative Ablation Results. Table 1 summarizes the ablation study across feature groups."
@@ -268,11 +267,9 @@
         ],
         "afterParagraphs": [
           "Across a wide range of events, the baseline representation, composed only of ball-relative features and binary player occupancy, produces coherent predictions. Completion probabilities concentrate near viable receivers, implausible regions are suppressed, and destination mass is assigned to a small set of reasonable options. This suggests much of pass feasibility and intent can be captured with minimal spatial cues under partial observability.",
-          "Augmenting the baseline with interaction features yields more nuanced behavior in complex situations. For routine passes, predictions remain similar, but in ambiguous or unsuccessful events the enriched model favors destinations with greater separation from defenders or stronger local control. These features improve spatial risk reasoning in counterfactual scenarios.",
-          "A limitation of the current formulation is the dense softmax over the full grid. With thousands of cells, even plausible destinations receive very small probabilities, making surfaces appear diffuse and underconfident. The relative structure is informative, but absolute probability scale is difficult to interpret and can obscure distinctions between strong and weak options.",
-          "Meaningful and interpretable pass probability surfaces can be learned from sparse broadcast-derived data using carefully designed spatial representations. Simple baseline features capture most feasibility structure, while a small number of interaction features help in complex or ambiguous cases. A key limitation is modeling destination selection with a dense spatial softmax under partial observability; alternative normalization, region-based predictions, or different formulations of pass intent are promising directions. Overall, the analysis is less conclusive than expected and warrants a deeper follow-up study, which I plan to pursue."
+          "Augmenting the baseline with interaction features yields more nuanced behavior in complex situations. For routine passes, predictions remain similar, but in ambiguous or unsuccessful events the enriched model favors destinations with greater separation from defenders or stronger local control. These features improve spatial risk reasoning in counterfactual scenarios."
         ],
-        "inlineAfterParagraphFigures": [
+        "inlineFigures": [
           {
             "afterParagraph": 1,
             "figure": {
@@ -295,6 +292,13 @@
               "noBorder": true
             }
           }
+        ]
+      },
+      {
+        "title": "Conclusion",
+        "paragraphs": [
+          "A limitation of the current formulation is the dense softmax over the full grid. With thousands of cells, even plausible destinations receive very small probabilities, making surfaces appear diffuse and underconfident. The relative structure is informative, but absolute probability scale is difficult to interpret and can obscure distinctions between strong and weak options.",
+          "Meaningful and interpretable pass probability surfaces can be learned from sparse broadcast-derived data using carefully designed spatial representations. Simple baseline features capture most feasibility structure, while a small number of interaction features help in complex or ambiguous cases. A key limitation is modeling destination selection with a dense spatial softmax under partial observability; alternative normalization, region-based predictions, or different formulations of pass intent are promising directions. Overall, the analysis is less conclusive than expected and warrants a deeper follow-up study, which I plan to pursue."
         ]
       }
     ]

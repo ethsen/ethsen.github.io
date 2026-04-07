@@ -1,0 +1,915 @@
+{
+  "slug": "variational-autoencoders",
+  "title": "Representation Learning in Art Through Variational Autoencoders",
+  "subtitle": "Studying compression, latent structure, and downstream usefulness across VAE variants",
+  "summary": "This project studies how VAEs learn representations of art through structured latent spaces. Using classification and latent space analysis, we explore how visual abstractions emerge and how these representations can be interpreted.",
+  "kicker": "generative modeling",
+  "year": 2026,
+  "featured": true,
+  "thumbnail": "assets/img/projects/variational-autoencoders/project_header_grid.png",
+  "heroFigure": {
+    "src": "assets/img/projects/variational-autoencoders/project_header_grid.png",
+    "alt": "Project header grid",
+    "wide": false,
+    "noBorder": true
+  },
+  "tags": [
+    "generative modeling",
+    "vision",
+    "deep learning"
+  ],
+  "mainTags": [
+    "art"
+  ],
+  "tech": [
+    "Python",
+    "PyTorch"
+  ],
+  "links": [
+    {
+      "label": "Report (PDF)",
+      "href": "../assets/docs/variational-autoencoders-senatore.pdf",
+      "kind": "secondary"
+    }
+  ],
+  "glance": {
+    "oneLiner": "A study of how VAE objectives shape latent representations of paintings, and what those representations reveal about the tradeoff between interpretability and downstream classification.",
+    "problem": "The project asks whether a model can compress paintings into a latent space that still preserves meaningful stylistic structure. Using WikiArt, I study whether generative objectives produce representations that remain useful for classification while being more interpretable than purely predictive models.",
+    "approach": "I trace the line from the information bottleneck to the VAE, then compare vanilla VAE, β-VAE, InfoVAE, and deeper residual variants on WikiArt. The evaluation combines frozen and finetuned latent probes, supervised baselines, PCA projections, nearest-neighbor retrieval, and latent traversals to study both usefulness and interpretability.",
+    "results": "Pretrained ResNets achieve the strongest classification accuracy, but their representations are comparatively opaque. VAE-family models perform worse on classification, yet expose a much more interpretable latent space. The β-VAE DeepVAE with β = 10 provides the strongest balance between latent organization, reconstruction quality, and downstream usefulness.",
+    "takeaways": [
+      "Supervised models separate styles more cleanly, but generative objectives make the latent space easier to interrogate and understand.",
+      "Among the models tested, β-VAE with β = 10 gives the clearest overall tradeoff between performance and interpretability.",
+      "Finetuning improves classification, but it also reshapes the latent space toward separation rather than explanation.",
+      "Similarity in latent space appears to come from both geometric proximity and shared directions of visual variation."
+    ]
+  },
+  "deep": {
+    "sections": [
+      {
+        "title": "Introduction",
+        "paragraphs": [
+          "About one month ago, I re-read Chapter 30 of <em>Foundations of Computer Vision</em> <span class=\"citation\">(Torralba et al., 2024)</span> which covers the concept of representation learning. In this chapter, Torralba presents a learning problem that feels ever so familiar when viewed from a certain perspective<span class=\"fn-ref\">1</span>. Formally, that is to take an input $x \\in X$ and compose it into an abstract representation $z \\in Z$.",
+          "The representation learning problem presents an interesting opportunity to study how we construct the abstract representation $z$ and how it can be composed for later use. Namely, by studying the representation of an abstraction we can better interpret how downstream judgements are made.",
+          "All methods of forming representations make use of pretext tasks that guide the formation of the structure of the abstract space. Through this, we are able to control for the information that is transmitted or ignored. These tasks are either compressive or predictive. In predictive tasks, we use labels to form the representation that is most relevant to the given task. Namely, we impose a prexisting structure over the representation which is most useful for a completing a task. Then, compressive tasks encourage the model to form its own representations by fitting the data through a bottleneck. More simply, we ask the model to compress the data into a limited space, keeping only the information needed to reconstruct it. We can think of compressive tasks as an approach that embodies <em>Occam's Razor</em> <span class=\"citation\">(Torralba et al., 2024)</span>.",
+          "The primary focus of my project is to explore compressive tasks, while briefly inspecting predictive tasks to compare how they differ in their representational approach. Specfically, I focus this exploration on the Variational Autoencoder (VAE). The VAE's goal is to take an input $x$, encode it into $z$, and then attempt to reconstruct $x$ based on our abstract representation $z$. Through this process, the model learns a latent representation that preserves what is essential for reconstruction, while being forced into a simple and compact form. It captures the core structure of the data, much like a mental representation captures the essence of an object rather than every detail.",
+          "I explore the VAE through its original paper and supporting work to establish the technical foundation of this project. I then conduct experiments on the WikiArt dataset <span class=\"citation\">(Tan et al., 2019)</span> to study how different VAE variants construct their latent spaces. An art dataset is particularly well suited for this purpose, as it presents a rich and inherently abstract domain. By examining how a model represents paintings, we gain insight into how it interprets visual structure, which in turn allows us to ask why it makes certain judgments.",
+          "Some of these experiments include performing latent space<span class=\"fn-ref\">2</span> probing and classification tests to study the quality and organization of the latent embeddings. Beyond just reviewing VAEs, I sought to answer two questions that arose during my exploration:",
+          "I must make clear that this project does not propose a new model; rather, it synthesizes existing theory and uses empirical analysis as a lens for interpretation. Fundamentally, I sought to explore the principles underlying generative modeling and how one of the most foundational models in this space approaches the representation learning problem."
+        ],
+        "footnotes": [
+          {
+            "number": 1,
+            "text": "Throughout this report I include some thought experiment blurbs that I found useful in forming my intuitive understanding of the topics presented."
+          },
+          {
+            "number": 2,
+            "text": "I often interchange latent and abstract space, but they describe exactly the same thing."
+          }
+        ],
+        "inlineQuotes": [
+          {
+            "afterParagraph": 0,
+            "paragraphs": [
+              "Think of an orange cube. What we picture in our mind when thinking on this cube, is an abstract representation of it. That is, there isn't a literal cube present, that we can observe through our senses. The cube exists in our mind, and due to our familiarity with something as simple as a cube, our mental image is incredibly rich.",
+              "Our representation is so rich that if you think again on your original orange cube, you could very easily color it blue, green, or red and maybe even place a ball on top. Our mind is incredibly well suited at composing basic concepts and forms to construct more complex representations. After all, this compositional process is the foundation of how we form knowledge. The cube exercise is especially easy to appreciate because it contains some of the most fundamental abstract concepts in colors, shapes, and perspective.",
+              "Here, we can return to our originally defined learning problem with a sense of familiarity. The learned representation, $z$, what we are after, is an abstraction of the data, $x$, much like our internal representation of a cube is to that of a cube, which could be immediately perceived."
+            ],
+            "variant": "thought"
+          },
+          {
+            "afterParagraph": 4,
+            "paragraphs": [
+              "Think of a VAE as a painter. Suppose this painter seeks to study a landscape and paint it. When studying the landscape, the artist decomposes the painting into its simplest forms, such as shapes, color, and lighting. This allows the painter to paint it not from its explicit form, but from an abstract representation that exists in their mind.",
+              "A landscape is harder to abstract than an orange cube, but we can still try to do so. Think on a vista you have recently seen, and attempt to picture it in your mind. Due to the complexity and richness of the vista, it may not be as easy to picture. Certainly not as easy as a cube. The difficulty of this exercise is what interests me most when studying it through a VAE."
+            ],
+            "variant": "thought"
+          },
+          {
+            "afterParagraph": 5,
+            "paragraphs": [
+              "(1) How well does a VAE, in all its forms, organize and compress data into an abstract space?",
+              "(2) How useful is this abstract space in downstream tasks, such as classification?"
+            ],
+            "variant": "questions"
+          }
+        ]
+      },
+      {
+        "title": "Background",
+        "paragraphs": [
+          "A natural place to begin is the information bottleneck view of representation learning: a useful representation should compress the input while still preserving the information needed for prediction. That framing originates in the information bottleneck method of <span class=\"citation\">(Tishby et al., 2000)</span>, and its relevance to deep learning is clarified further by <span class=\"citation\">(Tishby and Zaslavsky, 2015)</span>. <span class=\"citation\">(Alemi et al., 2016)</span> then make this idea practical in the variational setting, showing how a stochastic encoder can learn a compact latent variable that still retains task-relevant structure. This sequence of papers motivates representation learning not as raw compression alone, but as a controlled tradeoff between what is discarded and what remains useful.",
+          "The Variational Autoencoder is the next step in that path, because it realizes the same compression-relevance idea through probabilistic modeling, variational inference, and reconstruction-based learning <span class=\"citation\">(Kingma and Welling, 2013)</span>. Once that bridge is established, later variants become easier to interpret: β-VAE strengthens the pressure toward compressed and often more disentangled latent structure <span class=\"citation\">(Higgins et al., 2017; Burgess et al., 2018)</span>, while InfoVAE revisits how the latent distribution is regularized so the representation remains more informative and better aligned with the prior <span class=\"citation\">(Zhao et al., 2017; Gretton et al., 2006)</span>. This section is meant to orient the reader through that paper trail at a high level; for a fuller derivation and a more detailed paper-by-paper walkthrough, I encourage you to read the full project report."
+        ]
+      },
+      {
+        "title": "Methods",
+        "paragraphs": [
+          "As a reminder, I highlight the two central questions guiding the experimentation for this project.",
+          "To answer these questions, I first highlight our dataset and present why it is an interesting candidate of study. Then, I present the various architectures trained, including a description of the training approach. Finally, I present both quantitative and qualitative approaches to assist in answering our questions. There, I more clearly define the <em>quality</em> and <em>usefulness</em> of the latent space.",
+          "I make use of a precompiled WikiArt dataset from <span class=\"citation\">(Tan et al., 2019)</span>, consisting of over 40,000 paintings across 22 styles. Figure I showcases some examples from the dataset that span styles such as Impressionism, Expressionism, Abstract Expressionism, High Renaissance, Realism, and more. A natural question to pose regarding this dataset is the following: given a painting, can we correctly identify its artistic style? Formally, this defines the central downstream task considered in this project. Given an input image $x$, the goal is to predict its corresponding style label $y \\in \\{1, \\dots, K\\}$, where each class represents a distinct artistic style. This classification task serves as a proxy for evaluating whether the learned latent representation can be composed to capture meaningful stylistic structure.",
+          "This motivates both quantitative and qualitative analyses: classification experiments evaluate whether the learned structure is useful, while latent space analysis examines how stylistic <em>understanding</em> emerges within the representation.",
+          "I consider two model families. The first is a standard convolutional VAE, which serves as a controlled and interpretable baseline. The second is a deeper variant, which we can refer to as <em>DeepVAE</em>, which incorporates residual connections to increase representational capacity and improve optimization stability <span class=\"citation\">(He et al., 2016)</span>. Across both architectures, I explore three objective formulations: the vanilla VAE, β-VAE, and InfoVAE objectives. Rather than exhaustively exploring all configurations at scale, I first sweep a range of hyperparameters on the base VAE architecture and then select representative configurations for deeper experimentation.",
+          "Based on validation behavior, I select (Vanilla + β-VAE) β = {1, 10, 50} and (InfoVAE) λ = 100 for the DeepVAE experiments. Due to computational constraints, only a limited number of deep models are trained, with each requiring approximately one day of training on an NVIDIA 5070Ti. Architectural renderings can be seen in Figure II, while the full project report discloses more details regarding each block.",
+          "All images were converted to RGB, resized to 128×128 using bicubic interpolation, center-cropped, and converted to tensors. Corrupted images and images larger than 80 megapixels were excluded. Exact model configurations and optimization hyperparameters are reported in the full project report.",
+          "For unsupervised representation learning, the VAE-family models were trained on a random 90/10 train-validation split of the usable dataset under their respective generative objectives. Model selection was based on validation reconstruction loss, and the best checkpoint was retained for downstream evaluation.",
+          "Downstream classification was performed on the balanced tasks defined below. In all VAE-based downstream settings, classification is performed using the encoder mean μ, rather than stochastic samples from $q_\\phi(z\\mid x)$. In this sense, μ is treated as the stable latent summary of the input: a deterministic representation of the approximate posterior that is more appropriate for evaluating how well the learned bottleneck organizes class-relevant structure.",
+          "To assess representation quality, I first evaluated frozen encoders by training lightweight probe heads on extracted latent embeddings. I then considered a finetuning setting in which pretrained encoders were optimized jointly with the classifier head. Finally, I trained VAE and DeepVAE encoders directly on the classification objective to provide an end-to-end supervised comparison.",
+          "As an additional baseline, ResNet-18, ResNet-50, ResNet-101, and ResNet-152 models were trained on the same downstream tasks, both from scratch and with pretrained initialization. Across all supervised settings, model selection was based on validation Macro-F1, while final performance was reported using the metrics described in the evaluation strategy. Further implementation details, including optimizer settings, schedulers, warmup procedures, and batch sizes, are given in the full project report.",
+          "To evaluate performance, I construct three classification tasks of varying difficulty. The tasks differ both in the number of classes and the number of examples per class.",
+          "Performance is measured using the Macro-F1 score, Top-1, and Top-3 accuracy. In addition to quantitative evaluation, I conduct a qualitative analysis of the learned latent spaces. This includes projecting latent embeddings into 2D using PCA, analyzing neighborhood structure via K-Nearest Neighbors, and performing latent traversals to study how individual dimensions affect reconstruction and classification. These analyses are conducted both before and after finetuning, and compared against supervised baselines to understand how different objectives shape the organization and richness of the latent space."
+        ],
+        "inlineSubtitles": [
+          {
+            "afterParagraph": 1,
+            "text": "Dataset"
+          },
+          {
+            "afterParagraph": 3,
+            "text": "Modeling Approach"
+          },
+          {
+            "afterParagraph": 5,
+            "text": "Training Procedure"
+          },
+          {
+            "afterParagraph": 10,
+            "text": "Evaluation Strategy"
+          }
+        ],
+        "inlineQuotes": [
+          {
+            "afterParagraph": 0,
+            "paragraphs": [
+              "(1) How well does a VAE, in all its forms, organize and compress data into a latent space?",
+              "(2) How useful is this latent space in downstream tasks such as classification?"
+            ],
+            "variant": "questions"
+          }
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 2,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/paintingGrid.png",
+              "alt": "Examples from the WikiArt dataset",
+              "caption": "Figure I: Examples From the WikiArt Dataset (Tan et al., 2019).",
+              "wide": true,
+              "scale": 0.78,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 5,
+            "figure": {
+              "pager": [
+                {
+                  "src": "assets/img/projects/variational-autoencoders/VAE_Encoder.png",
+                  "alt": "Architecture Diagram for VAE Encoder"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/VAE_Decoder.png",
+                  "alt": "Architecture Diagram for VAE Decoder"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/DeepVAE_Encoder.png",
+                  "alt": "Architecture Diagram for DeepVAE Encoder"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/DeepVAE_Decoder.png",
+                  "alt": "Architecture Diagram for DeepVAE Decoder"
+                }
+              ],
+              "frameAspect": "5969 / 1598",
+              "autoCycle": 2800,
+              "caption": "Figure II: Architecture diagrams for the VAE encoder, VAE decoder, DeepVAE encoder, and DeepVAE decoder.",
+              "wide": true,
+              "noBorder": true
+            }
+          }
+        ],
+        "inlineTables": [
+          {
+            "afterParagraph": 4,
+            "table": {
+              "title": "Table I: Hyperparameter configurations explored for VAE variants.",
+              "columns": [
+                "Objective",
+                "Parameter",
+                "Values Explored"
+              ],
+              "rows": [
+                [
+                  "Vanilla VAE",
+                  "β",
+                  "{1}"
+                ],
+                [
+                  "β-VAE",
+                  "β",
+                  "{5, 10, 25, 50}"
+                ],
+                [
+                  "InfoVAE",
+                  "λ",
+                  "{50, 75, 100, 250, 500}"
+                ]
+              ]
+            }
+          },
+          {
+            "afterParagraph": 11,
+            "table": {
+              "title": "Table II: Classification task configurations.",
+              "columns": [
+                "Task",
+                "# Classes",
+                "Samples/Class",
+                "Description"
+              ],
+              "rows": [
+                [
+                  "Hard",
+                  "19",
+                  "300",
+                  "Low data, high ambiguity"
+                ],
+                [
+                  "Medium",
+                  "15",
+                  "1000",
+                  "Moderate difficulty"
+                ],
+                [
+                  "Easy",
+                  "10",
+                  "2000",
+                  "Higher data availability"
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "title": "Results",
+        "paragraphs": [
+          "To start, we study the results of the basic classification probing performed on all trained models. I select the best performing model from each family and report their performance on each classification task. As can be seen in Table III, the best performing models only modestly outperform the chance probability for each classification task. However, while the Top-1 and Top-3 accuracies are limited, they indicate that the latent embeddings contain <em>some</em> notion of style and can be composed into a weak classifier.",
+          "The learned representations capture simpler visual structures that are sufficient for reconstruction, but are not explicitly aligned with the higher-level abstractions required to distinguish artistic style. Despite their limited performance, these frozen-encoder models provide the clearest window into the classification process. By identifying which latent dimensions contribute most to a prediction and traversing them, we can gain an interpretable view of what the model is visually considering. We return to this idea when analyzing the latent space in more detail.",
+          "Following the probe experiments, I conduct a finetuning of each model. As shown in Table IV, finetuning leads to a noticeable improvement in performance, particularly on the medium and easy tasks. However, this improvement comes at the cost of interpretability, as the latent space becomes more structured for separation rather than explanation. Thus, the main advantage of pretraining via a generative task no longer affords us as much interpretability than before. Once again, we more closely inspect this tradeoff when analyzing the latent space.",
+          "Finally, Table V showcases the results of the baseline tests conducted on various ResNet models and the <em>VAE</em> and <em>DeepVAE</em> architectures. There a few things to appreciate in these results. A first observation is that even pretrained ResNet models do not achieve near-perfect performance (i.e., >90% Top-1 accuracy), highlighting the inherent difficulty of the task. Classifying artistic style sometimes does not correspond to clear distinctions in pixel space, making it a fundamentally challenging problem for vision models.",
+          "The classification results show that pretrained ResNet models achieve the strongest performance by a considerable margin. However, this raises a deeper question: how are these models organizing their representations, and what do they capture? By examining these differences, we can better understand what the model is visually attending to during classification. It is here that the strength of the VAE becomes apparent, as it provides a clearer window into this process.",
+          "As a starting point, I use the vanilla <em>DeepVAE</em> model, which performed about average across most classification tasks and serves as a reasonable baseline. In Figure III, we can visually discern the differences between non-finetuned and finetuned latent spaces after projecting all embeddings into 2D via PCA. After finetuning, the model organizes the data into more structured groups, bringing paintings of the same style closer together in latent space. As a result, dissecting and separating the data into distinct style categories becomes easier for the classification head. This is reflected in the observed ~10% increase in accuracy after finetuning.",
+          "This structure also provides insight into how the model differentiates between styles. For example, Baroque, Abstract Expressionism, and Impressionism (green, dark blue, and purple) form relatively distinct clusters, while Expressionist pieces (red) remain more dispersed across the latent space. This dispersion suggests that the model struggles to form a consistent representation for Expressionism, which in turn makes classification more difficult. This interpretation is supported by the confusion matrix in Figure IV(b), where the predicted class distribution for Expressionist pieces is spread across multiple classes. This effect is even more pronounced in the non-finetuned model, as shown in Figure IV(a), where predictions across all styles are more broadly distributed, reflecting a less structured latent space that is not well aligned with stylistic distinctions.",
+          "To further reinforce this idea, we can examine Figure V. The pretrained ResNet-152 model produces tightly clustered representations, with each style forming a well-defined group. This organization aligns with its strong classification performance (~60% Top-1 accuracy), as the model learns to construct embeddings that are tailored for classification. In this sense, the latent space is shaped explicitly around the task: it compresses the data into representations that are most useful for classification prediction.",
+          "However, this structure and organization come at a cost. In forming a representation optimized for classification, multiple visual factors become entangled within a single compact encoding. Rather than isolating distinct visual elements, the model compresses them into features that are useful for predicting style but difficult to interpret individually. As a result, while performance improves, our ability to understand what the model has learned is diminished. Unlike VAEs, these representations do not readily support exploration, as there is no clear way to traverse individual dimensions and study the abstractions they encode.",
+          "Fundamentally, what one must consider when studying these models is how much they care to know <em>how</em> the model is making predictions. A ResNet, or any other traditional supervised classification model, affords us stronger performance but limited interpretability. A VAE, or more generally, a model pretrained with a generative objective, may limit task-specific performance but improves our understanding of how a prediction is formed. In this sense, a VAE allows us to ask why. This naturally leads to a broader question. If a sufficiently expressive model is able to decompose a complex painting into simpler latent components, what can we learn from the forms it reduces to? Do these abstractions align with the compositional structures we intuitively recognize?",
+          "Among the models considered, the β-VAE (β = 10) <em>DeepVAE</em> is perhaps the most compelling to examine. It offers a balanced tradeoff between reconstruction quality and latent structure, producing representations that are both useful and interpretable. This is reflected in the organization of its latent space; accordingly, we evaluate classification using a frozen pretrained encoder paired with an MLP head. By traversing the latent dimensions that contribute most to classification, we begin to see the visual elements the model relies on.",
+          "Formally, the process is as follows: (1) sample a datapoint, (2) classify it, (3) identify the most influential latent dimensions in the classification, (4) traverse those dimensions, and (5) interpret the resulting variations. While the visual quality of these traversals is limited due to the scale of the model, they nonetheless provide insight into how the model is forming its representations. For each example, we present the original painting, its reconstruction, its predicted and true style, and traversals of the most influential latent dimensions. Among these, we highlight the dimensions with the lowest standard deviation in the latent encoding, as these correspond to the most stable directions in the representation. When these dimensions overlap with those contributing most to classification, they provide a clearer signal of what differentiates a painting within the latent space, and offer a more interpretable view into the abstractions the model relies on.",
+          "To ground this discussion, we highlight several examples from the latent space study. We begin with a painting from Claude Monet’s Waterloo Bridge series, specifically <em>Waterloo Bridge, Gray Day</em>. This is followed by <em>The Shell</em> by Rembrandt, <em>Portrait of Francesco d'Este</em> by Rogier Van Der Weyden, and <em>Landscape</em> by Volodymyr Orlovsky. Figures VI, VII, VIII, and IX capture snapshots spanning a range of styles and visual structures.",
+          "Using Figure IX (<em>Landscape</em>), we first identify the top-10 latent dimensions that contribute most to classification, and the top-10 dimensions with the lowest standard deviation. We then examine their overlap and traverse these shared dimensions to better understand what the model is visually attending to.",
+          "As shown in Figure X, there is substantial overlap between the most discriminative and most stable dimensions. This suggests that the classifier relies on these consistent latent directions, which capture information that is both structurally meaningful and useful for prediction. Some of these dimensions also vary smoothly along simple visual properties, making them easier to interpret.",
+          "A complementary observation is that each example’s nearest neighbors exhibit clear visual similarity to the query painting. While this is encouraging, it raises a more fundamental question: why does the model consider one painting similar to another? Returning to Figure IX and its nearest neighbor, <em>By the Eure River</em>, we find near-perfect overlap in the top-10 lowest standard deviation dimensions, with only minor differences in ranking. As shown in Figure XI(a) and (b), by traversing these axes we can identify that some correspond to smooth changes in color, lighting, and aspects of spatial structure. In this sense, similarity is grounded in shared variations of basic visual properties.",
+          "We also examine the top-10 lowest absolute error latent dimensions between the query and its nearest neighbor. As shown in Figure XI(c), some of these dimensions exhibit simple and interpretable patterns, while others are more difficult to attribute to a single visual factor. This highlights a second notion of similarity: one based on proximity in latent space rather than alignment along specific directions. Taken together, these results suggest that similarity arises from two sources: alignment along coherent, interpretable latent directions, and closeness under the latent distance. The former provides a clearer explanation of shared visual structure, while the latter reflects how the model internally measures similarity, even when it is less easily interpretable.",
+          "Finally, we examine whether these latent directions are consistent across different styles. By traversing the same low-variance dimensions identified from the landscape painting on a portrait example, we observe that their behavior remains largely consistent. As shown in Figure XI(d), divergence appears primarily in higher-variance dimensions. This suggests that low-variance dimensions capture general, style-agnostic properties such as global color and forms, while higher-variance dimensions encode more specialized structure. In this sense, the latent space appears to be organized along a spectrum of abstraction, from simple and general visual factors to more complex and style-specific representations.",
+          "It is worth noting that this analysis remains primarily qualitative. While many of the observed patterns in the latent space suggest directions for more formal, quantitative study, I deliberately focus here on building intuition through visualization and simple probing. Establishing this connection between latent structure, classification behavior, and traversal-based interpretation provides a foundation for deeper analysis, while leaving several promising directions for future work."
+        ],
+        "inlineTables": [
+          {
+            "afterParagraph": 1,
+            "table": {
+              "title": "Table III: Best frozen-encoder probe per objective. Both Linear and MLP heads were considered. ΔAcc = Acc - 1/K.",
+              "wide": true,
+              "compact": true,
+              "columns": [
+                "Objective",
+                "Config",
+                "Head",
+                "Architecture",
+                "",
+                "Top-1",
+                "Top-3",
+                "Macro-F1",
+                "ΔAcc"
+              ],
+              "rows": [
+                {
+                  "type": "section",
+                  "tone": "hard",
+                  "label": "<strong>Hard</strong> (19 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 25",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "<strong>0.221</strong>",
+                    "0.389",
+                    "0.225",
+                    "0.186"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 250",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.221",
+                    "0.408",
+                    "0.208",
+                    "0.168"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.195",
+                    "0.384",
+                    "0.189",
+                    "0.142"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "medium",
+                  "label": "<strong>Medium</strong> (15 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 10",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.259",
+                    "0.511",
+                    "0.251",
+                    "0.192"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 75",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "<strong>0.265</strong>",
+                    "0.514",
+                    "0.256",
+                    "0.199"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.249",
+                    "0.499",
+                    "0.242",
+                    "0.182"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "easy",
+                  "label": "<strong>Easy</strong> (10 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 50",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "<strong>0.291</strong>",
+                    "0.553",
+                    "0.277",
+                    "0.191"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 100",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.288",
+                    "0.575",
+                    "0.280",
+                    "0.188"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "MLP",
+                    "<em>VAE</em>",
+                    "",
+                    "0.284",
+                    "0.587",
+                    "0.277",
+                    "0.184"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "afterParagraph": 1,
+            "table": {
+              "title": "Table IV: Best finetuned models per objective. Architecture indicates whether the encoder comes from the standard <em>VAE</em> or <em>DeepVAE</em>.",
+              "wide": true,
+              "compact": true,
+              "columns": [
+                "Objective",
+                "Config",
+                "Head",
+                "Architecture",
+                "Top-1",
+                "Top-3",
+                "Macro-F1",
+                "ΔAcc"
+              ],
+              "rows": [
+                {
+                  "type": "section",
+                  "tone": "hard",
+                  "label": "<strong>Hard</strong> (19 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 50",
+                    "Linear",
+                    "<em>VAE</em>",
+                    "0.256",
+                    "0.475",
+                    "0.236",
+                    "0.203"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 100",
+                    "Linear",
+                    "<em>VAE</em>",
+                    "<strong>0.267</strong>",
+                    "0.482",
+                    "0.264",
+                    "0.214"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "Linear",
+                    "<em>VAE</em>",
+                    "0.237",
+                    "0.471",
+                    "0.230",
+                    "0.228"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "medium",
+                  "label": "<strong>Medium</strong> (15 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 10",
+                    "Linear",
+                    "<em>DeepVAE</em>",
+                    "<strong>0.349</strong>",
+                    "0.636",
+                    "0.342",
+                    "0.282"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 75",
+                    "Linear",
+                    "<em>VAE</em>",
+                    "0.321",
+                    "0.605",
+                    "0.315",
+                    "0.254"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "Linear",
+                    "<em>DeepVAE</em>",
+                    "0.321",
+                    "0.611",
+                    "0.318",
+                    "0.254"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "easy",
+                  "label": "<strong>Easy</strong> (10 classes)"
+                },
+                {
+                  "cells": [
+                    "β-VAE",
+                    "β = 10",
+                    "Linear",
+                    "<em>DeepVAE</em>",
+                    "<strong>0.381</strong>",
+                    "0.682",
+                    "0.373",
+                    "0.281"
+                  ]
+                },
+                {
+                  "cells": [
+                    "InfoVAE",
+                    "λ = 100",
+                    "Linear",
+                    "<em>DeepVAE</em>",
+                    "0.365",
+                    "0.668",
+                    "0.354",
+                    "0.265"
+                  ]
+                },
+                {
+                  "cells": [
+                    "VAE",
+                    "β = 1",
+                    "Linear",
+                    "<em>DeepVAE</em>",
+                    "0.365",
+                    "0.662",
+                    "0.351",
+                    "0.265"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "afterParagraph": 3,
+            "table": {
+              "title": "Table V: Best baseline classifiers per task difficulty. We report the best ResNet pretrained and from-scratch models (baseline runs), and the best end-to-end classifier (e2e runs). ΔAcc = Top-1 - 1/K.",
+              "wide": true,
+              "compact": true,
+              "columns": [
+                "Category",
+                "Model",
+                "Init",
+                "Head",
+                "Top-1",
+                "Top-3",
+                "Top-5",
+                "Macro-F1",
+                "ΔAcc"
+              ],
+              "rows": [
+                {
+                  "type": "section",
+                  "tone": "hard",
+                  "label": "<strong>Hard</strong> (19 classes)"
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet50",
+                    "Pretrained",
+                    "MLP",
+                    "<strong>0.461</strong>",
+                    "0.725",
+                    "0.823",
+                    "0.458",
+                    "0.409"
+                  ]
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet50",
+                    "Scratch",
+                    "MLP",
+                    "0.268",
+                    "0.518",
+                    "0.672",
+                    "0.268",
+                    "0.216"
+                  ]
+                },
+                {
+                  "cells": [
+                    "End-to-End",
+                    "<em>VAE</em>",
+                    "--",
+                    "Linear",
+                    "0.214",
+                    "0.403",
+                    "0.591",
+                    "0.209",
+                    "0.114"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "medium",
+                  "label": "<strong>Medium</strong> (15 classes)"
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet101",
+                    "Pretrained",
+                    "MLP",
+                    "<strong>0.568</strong>",
+                    "0.815",
+                    "0.906",
+                    "0.568",
+                    "0.501"
+                  ]
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet50",
+                    "Scratch",
+                    "MLP",
+                    "0.362",
+                    "0.618",
+                    "0.774",
+                    "0.362",
+                    "0.295"
+                  ]
+                },
+                {
+                  "cells": [
+                    "End-to-End",
+                    "<em>VAE</em>",
+                    "--",
+                    "MLP",
+                    "0.317",
+                    "0.519",
+                    "0.722",
+                    "0.315",
+                    "0.250"
+                  ]
+                },
+                {
+                  "type": "section",
+                  "tone": "easy",
+                  "label": "<strong>Easy</strong> (10 classes)"
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet152",
+                    "Pretrained",
+                    "MLP",
+                    "<strong>0.602</strong>",
+                    "0.855",
+                    "0.952",
+                    "0.601",
+                    "0.502"
+                  ]
+                },
+                {
+                  "cells": [
+                    "ResNet",
+                    "ResNet18",
+                    "Scratch",
+                    "MLP",
+                    "0.386",
+                    "0.667",
+                    "0.829",
+                    "0.385",
+                    "0.286"
+                  ]
+                },
+                {
+                  "cells": [
+                    "End-to-End",
+                    "<em>VAE</em>",
+                    "--",
+                    "Linear",
+                    "0.354",
+                    "0.619",
+                    "0.794",
+                    "0.344",
+                    "0.254"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "inlineFigures": [
+          {
+            "afterParagraph": 4,
+            "figure": {
+              "images": [
+                {
+                  "src": "assets/img/projects/variational-autoencoders/DeepVAE_Vanilla_PCA.png",
+                  "alt": "Non-finetuned DeepVAE PCA projection",
+                  "caption": "(a) Non-finetuned"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/DeepVAE_Vanilla_FT_PCA.png",
+                  "alt": "Finetuned DeepVAE PCA projection",
+                  "caption": "(b) Finetuned"
+                }
+              ],
+              "columns": 2,
+              "wide": true,
+              "noBorder": true,
+              "caption": "Figure III: Comparison of the entire dataset's latent embeddings projected down to 2D via PCA. Each color represents a specific style of paintings where there n = 10 types of styles."
+            }
+          },
+          {
+            "afterParagraph": 6,
+            "figure": {
+              "images": [
+                {
+                  "src": "assets/img/projects/variational-autoencoders/confusion_matrix_nonft.png",
+                  "alt": "Non-finetuned confusion matrix",
+                  "caption": "(a) Non-finetuned"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/confusion_matrix.png",
+                  "alt": "Finetuned confusion matrix",
+                  "caption": "(b) Finetuned"
+                }
+              ],
+              "columns": 2,
+              "wide": true,
+              "noBorder": true,
+              "caption": "Figure IV: Comparison of the Easy task dataset latent embeddings projected down to 2D via PCA. Each color represents a specific style of paintings where there K = 10 types of styles."
+            }
+          },
+          {
+            "afterParagraph": 7,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/ResNet152_PT_PCA.png",
+              "alt": "PCA of pretrained ResNet152 latent embeddings",
+              "caption": "Figure V: PCA of the latent embeddings from a pretrained ResNet152 model with n = 10 classes.",
+              "scale": 0.5,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 12,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/waterlooBridge_ReconNN.png",
+              "alt": "Waterloo Bridge reconstruction and nearest neighbors",
+              "caption": "Figure VI: From left to right: Original <em>Waterloo Bridge, Gray Day</em>, its reconstruction, and the top three nearest neighbors in latent space (by cosine distance). Nearest neighbors (left to right): <em>Lake Hyumpola</em> by Nicholas Roerich (Symbolism), <em>During Haying</em> by Efim Volkov (Realism), and <em>The Road from Montmartre in Paris</em> by Ilya Repin (Realism).",
+              "scale": 0.95,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 12,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/pinecone.png",
+              "alt": "The Shell reconstruction and nearest neighbors",
+              "caption": "Figure VII: From left to right: <em>The Shell (Conus Marmoreus)</em> by Rembrandt (Baroque), its reconstruction, and the top three nearest neighbors in latent space. Nearest neighbors (left to right): <em>Gear</em> by Anna Ostroumova-Lebedeva (Art Nouveau), <em>Landscape</em> by Kuzma Petrov-Vodkin (Symbolism), and <em>The Carnival: Chiarina</em> by Léon Bakst (Art Nouveau).",
+              "scale": 0.95,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 12,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/portrait.png",
+              "alt": "Portrait of Francesco d'Este reconstruction and nearest neighbors",
+              "caption": "Figure VIII: From left to right: <em>Portrait of Francesco d’Este</em> by Rogier van der Weyden (Northern Renaissance), its reconstruction, and the top three nearest neighbors in latent space. Nearest neighbors (left to right): <em>Portrait of Hieronymus Holzschuher</em> by Albrecht Dürer (Northern Renaissance), <em>Portrait of Maurice Gangnat</em> by Pierre-Auguste Renoir (Impressionism), and <em>Self-Portrait</em> by Kuzma Petrov-Vodkin (Symbolism).",
+              "scale": 0.95,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 12,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/tree.png",
+              "alt": "Landscape reconstruction and nearest neighbors",
+              "caption": "Figure IX: From left to right: <em>Landscape</em> by Volodymyr Orlovsky (Realism), its reconstruction, and the top three nearest neighbors in latent space. Nearest neighbors (left to right): <em>By the Eure River in Summer</em> by Gustave Loiseau (Post-Impressionism), <em>Cliffs of the Porte d’Aval</em> by Claude Monet (Impressionism), and <em>Funeral Symphony (VI)</em> by Mikalojus Konstantinas Čiurlionis (Symbolism).",
+              "scale": 0.95,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 13,
+            "figure": {
+              "src": "assets/img/projects/variational-autoencoders/landscape_traversal.png",
+              "alt": "Landscape latent traversal figure",
+              "caption": "Figure X: Architecture Diagram for VAE Convolutional Block (ConvBlock).",
+              "scale": 0.5,
+              "noBorder": true
+            }
+          },
+          {
+            "afterParagraph": 16,
+            "figure": {
+              "images": [
+                {
+                  "src": "assets/img/projects/variational-autoencoders/landscape_emb.png",
+                  "alt": "Landscape traversal low-variance dimensions",
+                  "caption": "(a) Landscape traversal (low-var dims)"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/nn_landscape_traversal_1.png",
+                  "alt": "Nearest-neighbor traversal using same dimensions",
+                  "caption": "(b) NN traversal (same dims)"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/nn_landscape_traversal.png",
+                  "alt": "Nearest-neighbor traversal using low-error dimensions",
+                  "caption": "(c) NN traversal (low-error dims)"
+                },
+                {
+                  "src": "assets/img/projects/variational-autoencoders/portrait_traversal.png",
+                  "alt": "Portrait traversal using same dimensions",
+                  "caption": "(d) Portrait traversal (same dims)"
+                }
+              ],
+              "columns": 2,
+              "wide": true,
+              "noBorder": true,
+              "caption": "Figure XI: Latent traversals across shared and low-error dimensions."
+            }
+          }
+        ]
+      },
+      {
+        "title": "Conclusion",
+        "paragraphs": [
+          "In this work, we examined how different learning objectives shape the structure and usefulness of latent representations. While supervised models such as ResNets produce highly organized latent spaces that are well-suited for classification, this organization comes at the cost of interpretability. In contrast, VAEs, particularly the β-VAE (β = 10), offer a more interpretable latent space that can be directly explored through traversal. Through quantitative and qualitative analyses, we find that VAE representations capture meaningful visual structure, even if they do not achieve near perfect classification performance.",
+          "More importantly, this study highlights a fundamental tradeoff between performance and interpretability. Models trained purely for prediction learn representations that are efficient but opaque, whereas models trained under a generative objective expose a structure that can be interrogated and understood. By leveraging latent traversals, we demonstrate that similarity in latent space arises not only from proximity, but also from shared directions of variation that correspond to basic visual properties.",
+          "Ultimately, this project does not aim to propose a new method, but rather to provide a lens through which representation learning can be studied. VAEs offer a particularly appealing framework in domains such as art, where structure is rich, compositional, and inherently open to interpretation. In this setting, learned representations become more than tools for prediction; they offer a way to explore how visual abstractions are formed and related."
+        ]
+      }
+    ]
+  },
+  "references": [
+    {
+      "html": "Alemi, A. A., Fischer, I., Dillon, J. V., and Murphy, K. (2016). <em>Deep variational information bottleneck</em>. arXiv preprint arXiv:1612.00410."
+    },
+    {
+      "html": "Bengio, Y., Courville, A., and Vincent, P. (2013). Representation learning: A review and new perspectives. <em>IEEE Transactions on Pattern Analysis and Machine Intelligence</em>, 35(8), 1798-1828."
+    },
+    {
+      "html": "Burgess, C. P., Higgins, I., Pal, A., Matthey, L., Watters, N., Desjardins, G., and Lerchner, A. (2018). <em>Understanding disentangling in Beta-VAE</em>. arXiv preprint arXiv:1804.03599."
+    },
+    {
+      "html": "Gretton, A., Borgwardt, K., Rasch, M., Schölkopf, B., and Smola, A. (2006). A kernel method for the two-sample-problem. <em>Advances in Neural Information Processing Systems</em>, 19."
+    },
+    {
+      "html": "He, K., Zhang, X., Ren, S., and Sun, J. (2016). Deep residual learning for image recognition. <em>Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition</em>, 770-778."
+    },
+    {
+      "html": "Higgins, I., Matthey, L., Pal, A., Burgess, C., Glorot, X., Botvinick, M., Mohamed, S., and Lerchner, A. (2017). <em>beta-VAE: Learning basic visual concepts with a constrained variational framework</em>. <em>International Conference on Learning Representations</em>. <a href=\"https://openreview.net/forum?id=Sy2fzU9gl\" target=\"_blank\" rel=\"noreferrer\">openreview.net/forum?id=Sy2fzU9gl</a>"
+    },
+    {
+      "html": "Kingma, D. P., Rezende, D. J., Mohamed, S., and Welling, M. (2014). <em>Semi-supervised learning with deep generative models</em>. <em>Advances in Neural Information Processing Systems</em>, 27."
+    },
+    {
+      "html": "Kingma, D. P., and Welling, M. (2013). <em>Auto-encoding variational Bayes</em>. arXiv preprint arXiv:1312.6114."
+    },
+    {
+      "html": "Tan, W. R., Chan, C. S., Aguirre, H., and Tanaka, K. (2019). Improved ArtGAN for conditional synthesis of natural image and artwork. <em>IEEE Transactions on Image Processing</em>, 28(1), 394-409. <a href=\"https://doi.org/10.1109/TIP.2018.2866698\" target=\"_blank\" rel=\"noreferrer\">doi.org/10.1109/TIP.2018.2866698</a>"
+    },
+    {
+      "html": "Tishby, N., Pereira, F. C., and Bialek, W. (2000). <em>The information bottleneck method</em>. arXiv preprint physics/0004057."
+    },
+    {
+      "html": "Tishby, N., and Zaslavsky, N. (2015). Deep learning and the information bottleneck principle. <em>2015 IEEE Information Theory Workshop (ITW)</em>, 1-5."
+    },
+    {
+      "html": "Torralba, A., Isola, P., and Freeman, W. T. (2024). <em>Foundations of Computer Vision</em>. MIT Press."
+    },
+    {
+      "html": "Zhao, S., Song, J., and Ermon, S. (2017). <em>InfoVAE: Information maximizing variational autoencoders</em>. arXiv preprint arXiv:1706.02262."
+    }
+  ]
+}
