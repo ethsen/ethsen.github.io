@@ -823,7 +823,7 @@
             "figure": {
               "src": "assets/img/projects/variational-autoencoders/landscape_traversal.png",
               "alt": "Landscape latent traversal figure",
-              "caption": "Figure X: Architecture Diagram for VAE Convolutional Block (ConvBlock).",
+              "caption": "Figure X: Latent Traversal of Overlapping Dimensions Between Top-10 Lowest Std. and Highest Contributing to Classification",
               "scale": 0.5,
               "noBorder": true
             }
