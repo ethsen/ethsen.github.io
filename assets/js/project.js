@@ -252,6 +252,22 @@ function getParam(name) {
   return url.searchParams.get(name);
 }
 
+function trackProjectAnalytics(project, view) {
+  if (typeof window.gtag !== "function" || !project?.slug) return;
+  const pagePath = `${window.location.pathname}${window.location.search}`;
+  const pageTitle = document.title || `${project.title || "Project"} | Project`;
+  window.gtag("event", "page_view", {
+    page_title: pageTitle,
+    page_location: window.location.href,
+    page_path: pagePath
+  });
+  window.gtag("event", "project_view", {
+    project_slug: project.slug,
+    project_title: project.title || "Untitled",
+    project_view_mode: view || "glance"
+  });
+}
+
 function isGithubLink(link) {
   if (!link) return false;
   const href = String(link.href || "").toLowerCase();
@@ -1310,6 +1326,7 @@ async function initProjectPage() {
     url.searchParams.set("view", nextView);
     history.replaceState({}, "", url.toString());
     renderView(nextView);
+    trackProjectAnalytics(p, nextView);
   };
 
   btnGlance.addEventListener("click", (event) => {
@@ -1320,6 +1337,8 @@ async function initProjectPage() {
     event.preventDefault();
     swapView("deep");
   });
+
+  trackProjectAnalytics(p, view);
 
 }
 
