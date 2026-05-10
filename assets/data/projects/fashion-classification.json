@@ -374,16 +374,6 @@
         "afterParagraphs": [
           "Taken together, this analysis reframes designer classification not as an end goal, but as a vehicle for studying how visual representations emerge under different training constraints. By stripping away contextual shortcuts, the model is encouraged to organize images around garment-level attributes such as color, texture, structure, and silhouette, i.e. properties that align more closely with how fashion is perceived and compared. While this comes at a cost to raw classification accuracy, the resulting feature space offers a clearer window into what the model has learned, revealing structure that is visually meaningful rather than label-driven. In this sense, the project serves less as a benchmark on designer recognition and more as a controlled experiment in representation learning for fashion imagery."
         ]
-      },
-      {
-        "title": "Takeaways",
-        "bullets": [
-          "Designer classification can look solved on runway data while models still lean on scene context; interpretability checks are necessary.",
-          "Segmentation-based masking is a strong intervention for reducing contextual bias, but it makes capacity limits visible\u2014small models lose accuracy sharply.",
-          "Larger and/or pretrained models are more resilient under garment-only cues and produce more semantically meaningful embeddings for retrieval.",
-          "Heavy augmentation reduces shortcut reliance somewhat, but it does not consistently substitute for explicit background removal.",
-          "The most interesting output is the learned feature space: under reduced context, it organizes images by garment attributes (texture, color, silhouette), suggesting more fashion-centric objectives beyond designer labels."
-        ]
       }
     ]
   }
