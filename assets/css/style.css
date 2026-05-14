@@ -334,10 +334,14 @@ a:hover{ text-decoration: none; }
 .intro__head{
   display:grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 6px;
+  gap: 60px;
   align-items: center;
 }
-.intro__copy{ padding-top: 2px; max-width: 70ch; }
+.intro__copy{
+  padding-top: 2px;
+  width: min(100%, 70ch);
+  margin-left: auto;
+}
 .intro__media{
   display:flex;
   align-items:center;
