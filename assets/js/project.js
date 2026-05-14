@@ -113,7 +113,6 @@ function getMainTags(project) {
 
 function renderProjectCard(p) {
   const badges = [];
-  if (p.featured) badges.push(el("span", { class: "badge", text: "featured" }));
   if (p.year) badges.push(el("span", { class: "badge", text: String(p.year) }));
 
   const thumb = el("a", { class: "proj__thumb", href: projectUrl(p.slug, "glance") }, [
@@ -693,9 +692,12 @@ function bindHeroBannerFade(hero, banner) {
     const rect = hero.getBoundingClientRect();
     const fadeDistance = Math.max(220, Math.min(420, rect.height * 0.75));
     const progress = Math.max(0, Math.min(1, -rect.top / fadeDistance));
-    const opacity = 0.56 - progress * 0.46;
+    const isHeroStrong = banner.classList.contains("hero-banner-figure--strong");
+    const startOpacity = isHeroStrong ? 0.76 : 0.56;
+    const endOpacity = isHeroStrong ? 0.00 : 0.10;
+    const opacity = startOpacity - progress * (startOpacity - endOpacity);
     const translateY = progress * 18;
-    banner.style.opacity = String(Math.max(0.08, opacity));
+    banner.style.opacity = String(Math.max(endOpacity, opacity));
     banner.style.transform = `translateX(-50%) translateY(${translateY}px)`;
   };
 
@@ -1181,6 +1183,7 @@ async function initProjectPage() {
     hero.querySelectorAll(".hero-overlay").forEach(node => node.remove());
     hero.querySelectorAll(".hero-banner-figure").forEach(node => node.remove());
     hero.classList.toggle("article-hero--with-banner", Boolean(p.heroFigure?.src));
+    document.body.classList.toggle("page-project--vae", p.slug === "variational-autoencoders");
     if (p.heroFigure?.src) {
       const heroFig = renderFigure({
         ...p.heroFigure,
@@ -1188,6 +1191,9 @@ async function initProjectPage() {
       });
       if (heroFig) {
         heroFig.classList.add("hero-banner-figure");
+        if (p.slug === "variational-autoencoders") {
+          heroFig.classList.add("hero-banner-figure--strong");
+        }
         hero.insertBefore(heroFig, hero.firstChild);
         bindHeroBannerFade(hero, heroFig);
       }
