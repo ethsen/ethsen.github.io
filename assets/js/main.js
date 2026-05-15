@@ -41,6 +41,43 @@
     }
   });
 
+  const initAboutNote = () => {
+    const note = document.querySelector(".about__note");
+    if (!note) return;
+    const trigger = note.querySelector(".about__note-trigger");
+    const card = note.querySelector(".about__note-card");
+    if (!trigger || !card) return;
+
+    let closeTimer = null;
+
+    const clearCloseTimer = () => {
+      if (closeTimer !== null) {
+        window.clearTimeout(closeTimer);
+        closeTimer = null;
+      }
+    };
+
+    const openNote = () => {
+      clearCloseTimer();
+      note.classList.add("is-open");
+    };
+
+    const scheduleClose = () => {
+      clearCloseTimer();
+      closeTimer = window.setTimeout(() => {
+        note.classList.remove("is-open");
+        closeTimer = null;
+      }, 180);
+    };
+
+    trigger.addEventListener("mouseenter", openNote);
+    trigger.addEventListener("mouseleave", scheduleClose);
+    card.addEventListener("mouseenter", openNote);
+    card.addEventListener("mouseleave", scheduleClose);
+  };
+
+  initAboutNote();
+
   const controls = document.querySelectorAll("[data-gallery]");
   if (controls.length) {
     controls.forEach(btn => {

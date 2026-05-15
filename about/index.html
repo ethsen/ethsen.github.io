@@ -26,11 +26,15 @@
     })();
   </script>
   <link rel="icon" href="../assets/img/favicon.svg" type="image/svg+xml" />
+  <link rel="preload" as="image" href="../assets/img/scene_light.png" />
+  <link rel="preload" as="image" href="../assets/img/scene_dark.png" />
+  <link rel="preload" as="image" href="../assets/img/about/about_page_light.png" />
+  <link rel="preload" as="image" href="../assets/img/about/about_page_dark.png" />
   <link rel="stylesheet" href="../assets/css/style.css" />
   <script defer src="../assets/js/main.js"></script>
 </head>
 
-<body>
+<body class="page-about">
   <header class="topbar">
     <nav class="nav">
       <a class="brand" href="../">
@@ -100,6 +104,33 @@
           At my core, I am guided by a mindset shaped by athletics, liberal arts education, and technical practice. I believe that breadth, an ability to see context, history, and consequence, allows one to approach problems differently than a purely technical perspective alone. Engineering and machine learning do not exist in isolation; they are embedded within social, cultural, and human systems, each having impacts that extend far beyond performance metrics. Seeing the context in which products and models exist is central to meaningful progress, and being blind to those contexts is often what leads to harm or poor decision-making. My work is driven by the belief that thoughtful engineering, grounded in both rigor and perspective, is essential to building systems that genuinely serve people.
         </p>
       </section>
+
+      <div class="about__note" aria-label="Page design note">
+        <span class="about__note-trigger">What inspired this page design?</span>
+        <div class="about__note-backdrop" aria-hidden="true"></div>
+        <div class="about__note-card" role="note">
+          <p>
+          The initial inspiration for the design of my page came from a photography series by Zili Zhang that I saw at the Rittenhouse Square Fine Art Show in Philadelphia,
+          specifically his
+          <a class="about__link" href="https://windinsilence.com/series-won-recognition-from-fapa-and-1839" target="_blank" rel="noreferrer"><em>White and Blue</em></a>
+          series. I appreciated the simplicity of his work and specifically the color palette he captured.
+          </p>
+          <p>
+          In particular, the deep blue seen in the photo <em>White and Blue No.6</em> reminded me of Yves Klein’s
+          <a class="about__link" href="https://www.moma.org/collection/works/80103" target="_blank" rel="noreferrer"><em>Blue Monochrome</em></a> painting, which I saw at the MoMa. The painting itself captures a single deep blue color covering the entire canvas, which stood out to me when I first saw it in person. The depth of the blue is what I loved the most, and in many ways you kind of get lost in it if you just sit and stare for a while. It may seem odd, but if you have the chance to see it in person, I encourage you to do the same. Inevitably, I ended up picking Klein Blue as the main color for my page, which led me to thinking about how I could incorporate it into a design/theme for the page.
+          </p>
+          <p>
+          I knew I wanted to keep the design simple and, if possible, abstract in some way.
+          This led me to a rather unique source of inspiration being the <em>SpongeBob</em>
+          episode “SB-129,” specifically the scene where Squidward is transported into the
+          <a class="about__link" href="https://www.imdb.com/title/tt0769435/mediaviewer/rm491922944" target="_blank" rel="noreferrer"><em>nowhere dimension</em></a>.
+          It is one of my favorite episodes, and the abstract geometric space that is the nowhere dimension felt like the perfect way to combine the color pallete with a simple abstract design.
+          </p>
+          <p>
+          I ended up writing a basic script to make the backgrounds of the page using matplotlib, which I would be happy to share if you are curious. I want to close this by saying that I know nothing about design principles, and know very little about art. However, since this is my website, it is in many ways an expression of myself and I wanted to explain how I came about the design. If you're reading this, you were at the very least curious to find out, and I appreciate that, as you got to know me a little better :)
+          </p>
+        </div>
+      </div>
 
     </article>
   </main>
