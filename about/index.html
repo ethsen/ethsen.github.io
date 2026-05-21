@@ -53,42 +53,8 @@
       <header class="about__head">
         <p class="kicker">About</p>
         <h1>Who I am</h1>
-        <p class="muted">A short summary about my work, my interests, and the things that keep me curious.</p>
+        <p class="muted">A short summary about my background and my interests</p>
       </header>
-
-      <section class="about__section">
-        <h2>Research interests and personal projects</h2>
-        <p class="muted">This section includes some of my favorite paintings.</p>
-        <figure class="about__figure about__figure--right about__figure--art">
-          <img src="../assets/img/about/Helen by a Chair.jpeg" alt="Helen by a Chair painting by Maurice Marinot" />
-          <figcaption>Helen by a Chair, Maurice Marinot.</figcaption>
-        </figure>
-        <p>
-          Alongside formal coursework, I approach personal projects as both a portfolio and a space for exploration. Rather than focusing exclusively on robotics, I have intentionally applied similar technical ideas to domains that feel intellectually engaging and personally meaningful, particularly soccer, art and fashion. These projects are motivated less by the domains themselves and more by a recurring interest in how learning-based systems form internal representations.        </p>
-        <p>
-          One of the ideas that has most strongly influenced my recent work is representation learning, as described by Antonio Torralba in <em>Foundations of Computer Vision</em>. His chapter on the subject offers a clear and accessible perspective that fundamentally reshaped how I think about deep learning models. Rather than “understanding” the world on their own, models learn internal representations shaped by the objectives we define. The loss function guides what a model attends to, how it compresses complex data into simpler structure, and which features become useful for later tasks. As Torralba notes, “A good representation is one that makes subsequent problem solving easier.” Viewed this way, learning is a process of structured abstraction, where high-dimensional data is reduced into representations that preserve what matters for a given goal. Thinking about learning in these terms provides a concrete way to reason about how models interpret data, and why different objectives can lead to fundamentally different internal views of the same data.        </p>
-        <figure class="about__figure about__figure--left about__figure--art">
-          <img src="../assets/img/about/Nightclub.jpeg" alt="Nightclub painting by Abraham P. Hankins" />
-          <figcaption>Nightclub, Abraham P. Hankins.</figcaption>
-        </figure>
-        <p>
-          I often think about this process through a simple analogy. Imagine a toddler who is rewarded every time they correctly identify a cardinal in the sky. At first, the bird appears as a complex combination of color, shape, texture, and motion. Over time, driven by the incentive, the child no longer needs to process the full richness of the scene. The concept of a cardinal becomes reduced to a few salient cues: red coloration, a triangular silhouette, a particular pattern of movement. Recognition becomes efficient because the internal representation has become structured. The child no longer sees the entire bird; they see just enough.
-        </p>
-        <figure class="about__figure about__figure--right about__figure--art">
-          <img src="../assets/img/about/LastSupper.jpg" alt="The Last Supper painting by Mark Tobey" />
-          <figcaption>The Last Supper, Mark Tobey.</figcaption>
-        </figure>
-        <p>
-          This is why I find machine learning projects in non-traditional domains so compelling. My interest in areas such as art, fashion, and sport comes from a belief that representation learning is most revealing when applied to systems that resist compression. In these settings, performance alone is insufficient; understanding how a model interprets the data becomes essential to evaluating both its limitations and the assumptions embedded in its design. Model behavior, from this perspective, reflects our objectives as much as it reflects the system itself, since the objectives we define encode what we consider meaningful. When models struggle in these domains, they often expose mismatches between our formalizations and the underlying complexity of the problem. The same lens applies to more traditional fields such as robotics, where learned representations directly shape perception, planning, and control, and where failure modes can have tangible real-world consequences. Across both settings, careful inspection of representations is not optional, but central to understanding whether a system has learned something faithful to the task we intend it to perform.
-        </p>
-        <figure class="about__figure about__figure--left about__figure--art">
-          <img src="../assets/img/about/TheDouble.png" alt="The Double painting by Roberto Montenegro" />
-          <figcaption>The Double, Roberto Montenegro.</figcaption>
-        </figure>
-        <p>
-          In these settings, representation learning reveals both the power and the limitations of machine learning. Models attempt to compress vast, nuanced human systems into tractable internal structures, and in doing so, they expose what is lost as much as what is retained. When that compression is carefully structured, abstraction can still preserve meaning, but only if we understand what has been emphasized and what has been discarded. For me, this makes interpretability a first-order requirement: not merely a way to explain a prediction after the fact, but a means of assessing whether a system has learned something faithful or merely something useful. The goal is to build models that serve a purpose while remaining legible enough to evaluate honestly, especially when the domain itself cannot be reduced to a single tidy definition of correctness.
-        </p>
-      </section>
 
       <section class="about__section">
         <h2>Perspective beyond the work</h2>
@@ -96,13 +62,56 @@
           <img src="../assets/img/about/soccer.jpeg" alt="Placeholder for a field or soccer image" />
         </figure>
         <p>
-          Long before robotics or machine learning became central to my life, soccer occupied that role. Competing as a collegiate athlete alongside a demanding academic program fundamentally shaped how I approach challenges. Progress was often incremental, outcomes uncertain, and failure a frequent teacher. Over time, I experienced a wide range of roles, from starter to bench player to serving as a team captain, each offering its own lessons in responsibility, leadership, and resilience. Those experiences continue to influence how I work today, reinforcing the value of patience, discipline, and sustained effort when meaningful progress is not immediately visible.
+        Long before robotics or machine learning became central to my life, soccer occupied that role. I was given the opportunity to continue this passion into college, where soccer offered its final and perhaps most important lessons. The constant rhythm of switching focus between competing as an athlete and a demanding academic program shaped how I approach problems today.
         </p>
         <p>
-          Equally formative in shaping who I have become was my experience studying Italian literature with Professor Scott Lerner at Franklin & Marshall College. Despite my focus on physics, his courses had the most lasting impact on how I approach learning and, more broadly, how I see the world. Through writers such as Italo Calvino and Luigi Pirandello, he taught me not just how to read texts, but how to think. I was able to develop a respect for ambiguity, which enabled me treat uncertainty not as something to resolve quickly but something to sit with, examine, and let guide deeper understanding. That mindset has stayed with me. It shapes how I ask questions, how I approach difficult problems, and how I move between technical and non-technical domains with a greater sense of care and reflection.        </p>
-        <p>
-          At my core, I am guided by a mindset shaped by athletics, liberal arts education, and technical practice. I believe that breadth, an ability to see context, history, and consequence, allows one to approach problems differently than a purely technical perspective alone. Engineering and machine learning do not exist in isolation; they are embedded within social, cultural, and human systems, each having impacts that extend far beyond performance metrics. Seeing the context in which products and models exist is central to meaningful progress, and being blind to those contexts is often what leads to harm or poor decision-making. My work is driven by the belief that thoughtful engineering, grounded in both rigor and perspective, is essential to building systems that genuinely serve people.
+        The other half of my focus was dedicated to pursuing my degree in computational physics and applied math. In all honesty, I was never the greatest physicist, but I deeply appreciated how physics attempts to define reality. Above all else, physics laid my technical foundation, which provided me a toolset to be able to interrogate other topics, specifically Robotics/Machine Learning.Equally formative in shaping my foundation was my experience studying Italian literature under Professor Scott Lerner at F&M. Professor Lerner's courses acted as a healthy escape from the very objective world of math and physics. I learned to sit with ambiguity and uncertainty far differently than how it would be handled in a technical domain.
         </p>
+        <p>
+        Finally, pursuing my Masters in Robotics has served as the most important layer in  my foundation. I cannot speak more highly of the professors and peers I have had the chance to engage with; through learning from them, I sit here a fundamentally changed man. Taking vision courses taught by Professors Kostas Daniilidis and Jianbo Shi, shaped my passion and understanding of computer vision. While Professor Pratik Chaudhari's courses on learning laid my foundation on how to create systems that learn.
+        </p>
+      </section>
+
+      <section class="about__section">
+        <h2>Research interests and personal projects</h2>
+        <p class="muted">This section includes some of my favorite paintings.</p>
+        <div class="about__entry">
+          <figure class="about__figure about__figure--right about__figure--art">
+            <img src="../assets/img/about/Helen by a Chair.jpeg" alt="Helen by a Chair painting by Maurice Marinot" />
+            <figcaption>Helen by a Chair, Maurice Marinot.</figcaption>
+          </figure>
+          <p>
+          The topic that has most strongly influenced my recent work is compressive representation learning methods, as described by Antonio Torralba in <em>Foundations of Computer Vision</em>. Fundamentally, he lays out the central representation learning objective as mapping datapoints to an abstract space, or in essence, a new representation. He notes that, “A good representation is one that makes subsequent problem solving easier.” Viewed this way, compressive representation learning is a process of structured abstraction, where high-dimensional data is reduced into representations that preserve what matters for a given goal.
+          Thinking about learning in these terms provides a concrete way to reason about how models interpret data, and why different objectives can lead to fundamentally different internal representations.   
+          </p>
+        </div>
+        <div class="about__entry">
+          <figure class="about__figure about__figure--left about__figure--art">
+            <img src="../assets/img/about/Nightclub.jpeg" alt="Nightclub painting by Abraham P. Hankins" />
+            <figcaption>Nightclub, Abraham P. Hankins.</figcaption>
+          </figure>
+          <p>
+            I often think about this process through a simple analogy. Imagine a toddler who is rewarded every time they correctly identify a cardinal in the sky. At first, the bird appears as a complex combination of color, shape, texture, and motion. Over time, driven by the incentive, the child no longer needs to process the full richness of the scene. The concept of a cardinal becomes reduced to a few salient cues: red coloration, a triangular silhouette, a particular pattern of movement. Recognition becomes efficient because the internal representation has become structured. The child no longer sees the entire bird; they see just enough.
+          </p>
+        </div>
+        <div class="about__entry">
+          <figure class="about__figure about__figure--right about__figure--art">
+            <img src="../assets/img/about/LastSupper.jpg" alt="The Last Supper painting by Mark Tobey" />
+            <figcaption>The Last Supper, Mark Tobey.</figcaption>
+          </figure>
+          <p>
+            This is why I find machine learning projects in non-traditional domains so compelling. My interest in areas such as art, fashion, and sport comes from a belief that representation learning is most revealing when applied to systems that resist compression. In these settings, performance alone is insufficient; understanding how a model interprets the data becomes essential to evaluating both its limitations and the assumptions embedded in its design. Model behavior, from this perspective, reflects our objectives as much as it reflects the system itself, since the objectives we define encode what we consider meaningful. When models struggle in these domains, they often expose mismatches between our formalizations and the underlying complexity of the problem. The same lens applies to more traditional fields such as robotics, where learned representations directly shape perception, planning, and control, and where failure modes can have tangible real-world consequences. Across both settings, careful inspection of representations is not optional, but central to understanding whether a system has learned something faithful to the task we intend it to perform.
+          </p>
+        </div>
+        <div class="about__entry">
+          <figure class="about__figure about__figure--left about__figure--art">
+            <img src="../assets/img/about/TheDouble.png" alt="The Double painting by Roberto Montenegro" />
+            <figcaption>The Double, Roberto Montenegro.</figcaption>
+          </figure>
+          <p>
+            In these settings, representation learning reveals both the power and the limitations of machine learning. Models attempt to compress vast, nuanced human systems into tractable internal structures, and in doing so, they expose what is lost as much as what is retained. When that compression is carefully structured, abstraction can still preserve meaning, but only if we understand what has been emphasized and what has been discarded. For me, this makes interpretability a first-order requirement: not merely a way to explain a prediction after the fact, but a means of assessing whether a system has learned something faithful or merely something useful. The goal is to build models that serve a purpose while remaining legible enough to evaluate honestly, especially when the domain itself cannot be reduced to a single tidy definition of correctness.
+          </p>
+        </div>
       </section>
 
       <div class="about__note" aria-label="Page design note">

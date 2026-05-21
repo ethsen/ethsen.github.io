@@ -174,6 +174,7 @@
       if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
       if (img.dataset.lightboxBound) return;
       img.dataset.lightboxBound = "true";
+      if (img.closest(".about__figure")) img.dataset.lightboxCaption = "none";
       if (img.closest(".proj-body")) img.dataset.lightboxCaption = "none";
       img.setAttribute("tabindex", "0");
       img.setAttribute("role", "button");
