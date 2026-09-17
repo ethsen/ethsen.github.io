@@ -36,7 +36,6 @@
     "speed": "fast"
   },
   "glance": {
-    "oneLiner": "Quaternion UKF for IMU-only 3D orientation tracking with motion-capture calibration and validation.",
     "problem": "Estimate 3D orientation from noisy, biased IMU measurements on a nonlinear rotation manifold, while using motion-capture ground truth to calibrate sensors and validate the filter.",
     "approach": "I calibrated accelerometer and gyroscope axes with affine models, then ran a quaternion UKF that represents orientation uncertainty in a 3D tangent space and propagates sigma points through nonlinear dynamics and measurement models.",
     "results": "The filter tracks motion-capture orientation closely when bias/scale are calibrated, and reveals drift or sign errors quickly through roll/pitch/yaw comparisons.",

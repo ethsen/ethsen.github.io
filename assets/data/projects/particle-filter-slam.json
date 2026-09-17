@@ -30,7 +30,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "Rao-Blackwellized particle-filter SLAM on KITTI LiDAR with log-odds occupancy grids.",
     "problem": "Goal: estimate planar pose and a global occupancy grid from noisy LiDAR while respecting SE(2) kinematics. Challenge: map and localization are coupled, so the measurement model and weight updates must be stable across long sequences.",
     "approach": "I implemented grid discretization, SE(2) motion composition with Gaussian noise, LiDAR-to-world transforms, log-domain weight updates, and stratified resampling triggered by effective sample size. The map is updated in log-odds using the MAP particle.",
     "results": "The pipeline yields consistent trajectories and clean occupancy maps on KITTI sequences 00-03, with stable weights and resampling only when particle diversity drops. The main gains came from careful frame transforms and log-sum-exp normalization.",

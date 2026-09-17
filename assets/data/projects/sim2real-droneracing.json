@@ -1,0 +1,148 @@
+{
+    "slug": "sim2real-droneracing",
+    "title": "Sim2Real Drone Racing",
+    "subtitle": "Comprehensive reinforcement learning project exploring sim2real methods in drone racing",
+    "summary": "This project takes on training a drone to race using IsaacSim, which then acted as the policy used in real life. This project involved implementing PPO from scratch, designing the reward structure, reset strategy, and observations that were used to train the policy.",
+    "kicker": "reinforcement learning",
+    "year": 2026,
+    "featured": true,
+    "thumbnail": "assets/img/projects/sim2real-droneracing/example.gif",
+    "tags": [
+        "deep learning"
+    ],
+    "mainTags": [
+        "reinforcement learning",
+        "robotics"
+    ],
+    "tech": [
+        "Python",
+        "PyTorch",
+        "IsaacSim"
+    ],
+    "glance": {
+        "problem": "For my final project in the course Physical Intelligence (ESE 6510) taught by Professor Antonio Loquercio, we were tasked with training a drone racing policy using NVIDIA IsaacSim. This project involved implementing PPO from scratch, and constucting the state representaiton, reward structure, and episode reset strategy. Below is an example video of a trained policy.",
+        "approach": "The project was designed to operate in two distinct phases: First, was the simulation phase, where we would train a racing policy in simulation and then compete to achieve the fastest simulation time. The second phase tested how well our trained policies translated into real life. We were afforded additional time to iterate on our approach in order to bridge the sim2real gap, which acted as a foundational experience in developing my understanding of RL methods particularly within the robotics domain.",
+        "results": "While initially struggling in the simulation phase, I learned to quickly adopt my strategy in order to squeeze out performance from the racing policy. This involved finetuning PPO hyperparameters, simplifying my reward structure from dense to sparse rewards, and implementing a more complex reset strategy. By systematically improving upon each area on my approach, I learned so much about how even the smallest of choices could impact the resultant racing policy.",
+        "inlineVideos": [
+          {
+            "afterParagraph": 0,
+            "video": {
+              "src": "assets/img/projects/sim2real-droneracing/example_video.mp4",
+              "caption": "Example of trained policy racing through course.",
+              "controls": true,
+              "muted": true,
+              "scale": 0.75,
+              "loop": true
+            }
+          }
+        ]
+    },
+    "deep": {
+        "sections": [
+            {
+                "title": "Introduction",
+                "paragraphs": [
+                    "For my final project in Physical Intelligence (ESE 6510), taught by Professor Antonio Loquercio, we were tasked with training a drone-racing policy using NVIDIA Isaac Lab. The project involved implementing PPO, constructing an observation space, and designing a reward structure and episode-reset strategy. Thanks to the teaching staff and their research infrastructure, much of the simulation framework was provided to us as students.",
+                    "This report is limited in detail as I am unable to share the code used for this project due to academic integrity constraints. However, I dive into the process of devising my initial approach, recognizing the errors I made, and how I adopted my approach."
+                    ]
+            },
+            {
+                "title": "Phase I: Training in Simulation",
+                "paragraphs": [
+                    "Early in the planning phase, I assumed that a highly complex and carefully engineered reward structure would produce the strongest racing policy. My intuition was that enough guardrails could force the policy toward what I believed was an optimal racing strategy. In hindsight, this was the central flaw in my initial approach: I was trying to impose my assumptions about how the drone should fly, rather than defining the task clearly and allowing the agent to discover useful behavior through exploration.",
+                    "The turning point came from observing the poor racing behavior of my early policies and discussing strategies with my peers. Yet, the most helpful source of information came from Sutton & Barto's Introduction To Reinforcement Learning, where they warn that the reward structure should describe what we want accomplished, rather than encode prior knowledge about how to accomplish it.",
+                    "Thus, in summary and ignoring any details regarding my PPO implentation or hyperparameters used, my initial reward structure was far too dense. The dense reward structure led to behavior that was not only suboptimal but often reckless. As an additional hindrance, it convoluted tuning the rewards as I was unable to narrow down which positive or negative reward contributed to a bad racing policy. An example of a terrible policy can be seen in the video below. ",
+                    "Specifically, the initial reward included progress through the track, gate-centering, a large crash penalty, and hardcoded penalties to prevent the drone from doubling back through gates. Although each term seemed reasonable in isolation, together they created a dense and difficult-to-diagnose reward function. When the policy converged slowly or produced lackluster lap times, it was unclear whether the cause was the progress term, the gate-centering term, the crash penalty, the anti-cheating logic, or the PPO hyperparameters.",
+                    "I therefore simplified the reward around the core task outcomes: pass gates correctly, avoid invalid traversal, avoid crashing, and survive long enough to complete the course. The final reward used a simple gate-pass reward, a crash penalty, an existence penalty, and a major death penalty when an episode terminated. A valid gate pass was detected geometrically by checking that the drone crossed the active gate plane in the correct direction and within the physical gate opening. Crossing backward through the active gate, re-entering the previously passed gate in the wrong direction, or colliding with the environment was treated as failure.",
+                    "This sparse reward structure proved to be a better foundation. It converged faster, was easier to interpret, and made debugging more systematic. Because the reward terms corresponded directly to meaningful task events, I could identify whether the policy was failing because it crashed, missed gates, cheated through the course, or simply lacked speed.",
+                    "After establishing a stable reward structure, I turned toward improvign my the reset strategy. I initially used a broad reset distribution that spawned the drone behind a randomly selected gate. This prevented the policy from learning only the beginning of the track and encouraged gate traversal as a reusable skill. As the policy improved, certain gates and maneuvers remained consistent failure points, so I biased resets toward gates where the drone struggled most. This targeted curriculum increased exposure to difficult course sections and helped reduce specific lap-time bottlenecks.",
+                    "The final reset approach combined randomization with curriculum learning. The drone was spawned in the selected gate's local frame, with randomized position offsets and yaw perturbations. This made the policy robust to different approaches while keeping the training state relevant to racing. I also separated the choice of which gates to prioritize from how the drone should be spawned near them, making it easier to tune each difficult gate's sampling frequency and spawn profile independently.",
+                    "The second major hurdle was PPO hyperparameter tuning. Access to strong compute allowed me to simulate up to 20,000 parallel environments. This larger batch of experience made it practical to increase the learning rate and tune parameters such as the lambda value and entropy coefficient more aggressively. With more environments running in parallel, the policy received much more data per update, allowing higher learning rates without immediately destabilizing training.",
+                    "The most successful training procedure was sequential. I first trained a stable racing policy with the entropy coefficient set to 0. This policy could complete the course, but tended to settle into conservative behavior. Rather than always resuming from the final epoch, I returned to an earlier checkpoint where the policy had not become stagnant and the action standard deviation was around 0.2. From there, I resumed with an entropy coefficient of 5e-3 to encourage exploration of maneuvers that the low-entropy setup had not attempted.",
+                    "The policy standard deviation then typically settled around 0.1. Then, I resumed training from the final weights with a reduced entropy coefficient of 2.5e-3, followed by another round at 1.5e-3. This gradual entropy reduction worked better than a single fixed entropy coefficient, where the stable low-entropy policy provided a reliable foundation, while later higher-entropy phases reintroduced exploration in a controlled way. The drone could discover faster, more complex maneuvers without losing the stable racing behavior it had already learned.",
+                    "Overall, Phase I taught me that successful reinforcement learning depends less on forcing an agent into a preconceived strategy and more on designing the right learning conditions. My initial dense reward reflected assumptions about how the drone should fly, but it made behavior difficult to debug and limited the usefulness of exploration. Simplifying the reward, improving the reset distribution, using targeted curriculum, and applying a sequential training schedule became the central lessons of the simulation phase. The resultant policy flying in simulation can be seen in the video below."
+                ],
+                "inlineVideos": [
+                    {
+                        "afterParagraph": 2,
+                        "video": {
+                            "src": "assets/img/projects/sim2real-droneracing/bad_example.mp4",
+                            "caption": "Simulation rollout of bad racing policy.",
+                            "controls": true,
+                            "muted": true,
+                            "loop": true,
+                            "scale": 0.75
+                        }
+                    },
+                    {
+                        "afterParagraph": 11,
+                        "video": {
+                            "src": "assets/img/projects/sim2real-droneracing/example_video.mp4",
+                            "caption": "Simulation rollout of good racing policy.",
+                            "controls": true,
+                            "muted": true,
+                            "loop": true,
+                            "scale": 0.75
+                        }
+                    }
+                ]
+            },
+            {
+                "title": "Phase II: Transitioning to the Real World",
+                "paragraphs": [
+                    "Phase II was entirely focused on training a policy that was able to race <em>safely</em> in the real-world. We were given two weeks and limited testing slots to experiment and finetune our approach based on what we observed. This phase was by far the most arduos and stressful portion of this project as bridging the sim2real gap confirmed its notoriously difficult reputation. Notably, in order to qualify for the final race day, we had to complete three laps without touching the ground or edges of the gate.",
+                    "Below is a video of a real-world test using a policy trained completely in simulation. I will use this example to motivate some of the decisions I made and also shed light on what I could have done better. Naturally, after having passed the preliminary testing and observing a competent racing policy in simulation, I was confident to have produced a policy able to, at the very least, fly in real life. This was confirmed during the initial tests, but the glaring issue of the drone flying too close to the ground became apparent.",
+                    "After identifying this issue, I first attempted to address it through a different reset strategy. Specifically, I biased the reset strategy to prioritize the spawn points near the gate in which it struggled most and even gates that preceded it. This is aligned with the logic I employed during simulation testing, but this time it did not prove to be as helpful.",
+                    "After making changes, further testing still revealed the same issue, thus I pivoted my approach by adopting a significantly more aggressive domain randomization strategy. I perturbed the flight dynamics, thrust-to-weight ratio, and other environmental factors in order to simulate the potential real-world conditions the policy would face. This improved the performance but was still not enough to bridge the sim2real gap.",
+                    "This motivated me to dig deeper into how a policy that was excellent in simulation could fall so short in real life. The result of which was observing a distinct tradeoff between racing ability and safety. I found that trained policies that were not as optimized, or more simply trained for a shorter amount of time, were able to safely complete the course due to the sub-optimal race path it took. An example of which can be seen in the video below.",
+                    "Further real-world testing confirmed this after I was able to qualify for the final race day with a slow, but safe, racing policy. Due to the time constraints, I had to accept this result and commit to a training strategy that I thought would succeed. Combining my altered reset strategy with the extensive domain randomization, I trained a policy over night the day before race day. Naively, I took a leap of faith hoping that by training a new policy based upon my existing observations I could win the race. Ultimately on race day, my resultant racing policy crashed and failed to finish more than a single lap, serving as the final lesson to a long and difficult project."
+            
+                ],
+                "inlineVideos": [
+                    {
+                        "afterParagraph": 1,
+                        "video": {
+                            "src": "assets/img/projects/sim2real-droneracing/sim2real.mp4",
+                            "caption": "Real-world testing of policy trained entirely in simulation",
+                            "controls": true,
+                            "muted": true,
+                            "loop": true,
+                            "scale": 0.75
+                        }
+                    },
+                    {
+                        "afterParagraph": 4,
+                        "video": {
+                            "src": "assets/img/projects/sim2real-droneracing/suboptimal_example.mp4",
+                            "caption": "Simulation rollout of sub-optimal racing policy.",
+                            "controls": true,
+                            "muted": true,
+                            "loop": true,
+                            "scale": 0.75
+                        }
+                    },
+                    {
+                        "afterParagraph": 5,
+                        "video": {
+                            "src": "assets/img/projects/sim2real-droneracing/race-day.mp4",
+                            "caption": "Race day results :(",
+                            "controls": true,
+                            "muted": true,
+                            "loop": true,
+                            "scale": 0.75
+                        }
+                    }
+                ]
+            },
+            {
+                "title": "Conclusion",
+                "paragraphs": [
+                    "This project was by far the most difficult project I had undertaken during my graduate studies but also the most rewarding and informative. It revealed both fundamental issues in my practical approach to solving problems and my misunderstanding of existing reinforcement learning material. At every stage, after every experiment, and through each failure I learned something new about how a specific choice impacts performance. ",
+                    "Moreover, upon reflection I highlighted two potential improvements I could have made on my approach. First, I should have injected noise into my observations as I overestimated how accurate the tracking and sensor systems were in the real-world. Relying on perfect observations caused my policy to be brittle to changing environmental conditions. Secondly, I should have incorporated the flight trajectory data produced during real-world testing into my training mechanism. Namely, I could have biased my reset strategy towards the observed trajectory taken in real life.",
+                    "This project showed me that effective reinforcement learning comes from creating clear objectives and useful training conditions, then using evidence from the policy's behavior to refine the approach. In simulation, a simpler reward, targeted resets, and staged entropy tuning produced a more interpretable and capable racing policy. The real-world phase extends that lesson: success depends not only on achieving strong simulated performance, but also on understanding and addressing the gap between simulation and deployment."
+                ]
+            }
+        ]
+    },
+    "references": []
+}

@@ -374,6 +374,15 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
       inlineMap.get(entry.afterParagraph).push(entry.figure);
     });
   }
+  const inlineVideos = Array.isArray(opts.inlineVideos) ? opts.inlineVideos : null;
+  const videoMap = new Map();
+  if (inlineVideos) {
+    inlineVideos.forEach(entry => {
+      if (!entry || typeof entry.afterParagraph !== "number" || !entry.video) return;
+      if (!videoMap.has(entry.afterParagraph)) videoMap.set(entry.afterParagraph, []);
+      videoMap.get(entry.afterParagraph).push(entry.video);
+    });
+  }
   const inlineTables = Array.isArray(opts.inlineTables) ? opts.inlineTables : null;
   const tableMap = new Map();
   if (inlineTables) {
@@ -418,6 +427,12 @@ function renderBlock(title, paragraphs = [], bullets = null, opts = {}) {
       inlineMap.get(idx).forEach(fig => {
         const figNode = renderFigure(fig);
         if (figNode) block.appendChild(figNode);
+      });
+    }
+    if (videoMap.has(idx)) {
+      videoMap.get(idx).forEach(video => {
+        const videoNode = renderVideo(video);
+        if (videoNode) block.appendChild(videoNode);
       });
     }
     if (tableMap.has(idx)) {
@@ -912,6 +927,35 @@ function renderFigures(figures) {
   return wrap;
 }
 
+function renderVideo(video) {
+  if (!video?.src) return null;
+  const attrs = {
+    src: assetUrl(video.src),
+    controls: video.controls === false ? null : "",
+    muted: video.muted ? "" : null,
+    loop: video.loop ? "" : null,
+    autoplay: video.autoplay ? "" : null,
+    playsinline: "",
+    preload: video.preload || "metadata"
+  };
+  if (video.poster) attrs.poster = assetUrl(video.poster);
+  Object.keys(attrs).forEach(key => attrs[key] == null && delete attrs[key]);
+
+  const children = [el("video", attrs)];
+  if (video.caption) {
+    const useHtmlCaption = typeof video.caption === "string" && /<[^>]+>/.test(video.caption);
+    children.push(el("figcaption", useHtmlCaption ? { html: video.caption } : { text: video.caption }));
+  }
+  const classes = ["figure", "figure--video"];
+  if (video.wide) classes.push("figure--wide");
+  if (video.noBorder) classes.push("figure--no-border");
+  const attrsFigure = { class: classes.join(" ") };
+  if (typeof video.scale === "number" && video.scale > 0 && video.scale !== 1) {
+    attrsFigure.style = `width: ${Math.round(video.scale * 100)}%; margin-left: auto; margin-right: auto;`;
+  }
+  return el("figure", attrsFigure, children);
+}
+
 function renderTable(table) {
   if (!table || !Array.isArray(table.columns) || !Array.isArray(table.rows)) return null;
   const wrapClasses = ["table"];
@@ -1281,9 +1325,22 @@ async function initProjectPage() {
 
     if (view === "glance") {
       const problemLines = [p.glance?.oneLiner, p.glance?.problem || p.summary].filter(Boolean);
-      body.appendChild(renderBlockWithFigures("Problem statement", problemLines, null, p.glance?.problemFigures || null, p.glance?.problemTables || null, { lede: true, figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
+      body.appendChild(renderBlockWithFigures(
+        "Problem statement",
+        problemLines,
+        null,
+        p.glance?.problemFigures || null,
+        p.glance?.problemTables || null,
+        {
+          lede: true,
+          figureRefs: viewFigureRefs,
+          tableRefs: viewTableRefs,
+          inlineVideos: p.glance?.inlineVideos || null
+        }
+      ));
       body.appendChild(renderBlockWithFigures("Approach", [p.glance?.approach || "" ], p.glance?.approachBullets || null, p.glance?.approachFigures || null, p.glance?.approachTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
       body.appendChild(renderBlockWithFigures("Results", [p.glance?.results || "" ], p.glance?.resultsBullets || null, p.glance?.resultsFigures || null, p.glance?.resultsTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
+      
 
       if (p.glance?.takeaways?.length) {
         body.appendChild(renderBlockWithFigures("Key takeaways", [], p.glance.takeaways, p.glance?.takeawayFigures || null, p.glance?.takeawayTables || null, { figureRefs: viewFigureRefs, tableRefs: viewTableRefs }));
@@ -1310,6 +1367,7 @@ async function initProjectPage() {
             afterTableParagraphs: s.afterTableParagraphs || null,
             tablesBeforeFigures: Boolean(s.tablesBeforeFigures),
             inlineFigures: s.inlineFigures || null,
+            inlineVideos: s.inlineVideos || null,
             inlineTables: s.inlineTables || null,
             footnotes: s.footnotes || null,
             inlineQuotes: s.inlineQuotes || null,

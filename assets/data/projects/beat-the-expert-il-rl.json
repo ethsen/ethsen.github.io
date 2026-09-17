@@ -31,7 +31,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "Hybrid IL-RL racing policy that uses imitation learning to jump-start PPO in F1TENTH autonomous racing.",
     "problem": "End-to-end RL for autonomous racing is sample-inefficient and prone to local optima, yet expert demonstrations alone can limit agility and generalization. The question is whether RL can reliably improve upon a strong IL baseline in high-speed racing.",
     "approach": "Pre-train an HG-DAGGER imitation policy from expert demonstrations, then use it to initialize PPO. Train on the F1TENTH platform and compare lap performance against expert demonstrations of varying difficulty.",
     "results": "The IL-RL policy improves sample efficiency and surpasses the easiest expert demonstration, but does not outperform the medium or hardest experts. This suggests the IL bootstrap helps early learning, while pure RL may still be needed to reach elite performance.",

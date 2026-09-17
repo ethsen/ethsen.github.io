@@ -33,7 +33,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "A study of how VAE objectives shape latent representations of paintings, and what those representations reveal about the tradeoff between interpretability and downstream classification.",
     "problem": "The project asks whether a model can compress paintings into a latent space that still preserves meaningful stylistic structure. Using WikiArt, I study whether generative objectives produce representations that remain useful for classification while being more interpretable than purely predictive models.",
     "approach": "I trace the line from the information bottleneck to the VAE, then compare vanilla VAE, β-VAE, InfoVAE, and deeper residual variants on WikiArt. The evaluation combines frozen and finetuned latent probes, supervised baselines, PCA projections, nearest-neighbor retrieval, and latent traversals to study both usefulness and interpretability.",
     "results": "Pretrained ResNets achieve the strongest classification accuracy, but their representations are comparatively opaque. VAE-family models perform worse on classification, yet expose a much more interpretable latent space. The β-VAE DeepVAE with β = 10 provides the strongest balance between latent organization, reconstruction quality, and downstream usefulness.",

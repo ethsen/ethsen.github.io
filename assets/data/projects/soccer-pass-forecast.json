@@ -36,7 +36,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "Learning pass-feasibility surfaces from sparse freeze-frame soccer data, with an emphasis on what state representations can support under partial observability.",
     "problem": "Broadcast-derived snapshots capture only event-aligned freeze frames, omitting large portions of play, off-screen players, and temporal continuity. This makes pass intent and completion difficult to model reliably and motivates a careful study of which spatial cues are sufficient for meaningful predictions.",
     "approach": "Build structured spatial state tensors that combine static geometry priors (boundary/goal distance), dynamic player and ball occupancy, coarse motion summaries, and interaction control maps (Gaussian dominance and nearest-defender distance). Train a fixed two-head fully convolutional model to output destination and completion surfaces, then probe representation choices via controlled ablations.",
     "results": "Completion surfaces are coherent and largely stable across feature sets, suggesting local geometry and defender proximity capture much of feasibility. Interaction cues provide subtle improvements in ambiguous scenarios, while destination distributions remain sensitive to representation choices and softmax normalization, limiting conclusiveness.",

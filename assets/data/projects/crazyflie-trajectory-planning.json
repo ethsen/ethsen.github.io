@@ -29,7 +29,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "End-to-end CrazyFlie 2.0 stack with tuned control, A* + RDP waypoint planning, and piecewise-linear trajectory execution in a maze.",
     "problem": "Deliver reliable maze navigation on real hardware by updating gains, planning collision-free paths from a voxel map, and keeping flight stable under VICON feedback and hardware limits.",
     "approach": "Tuned geometric PD gains on hardware, then generated A* waypoint paths on a 3D occupancy grid, simplified them with RDP, and executed piecewise-linear segments with speed caps and obstacle inflation.",
     "results": "Stable hover and waypoint tracking were achieved, and full maze runs were executed; tracking errors appeared at sharp turns due to thrust limits, VICON occlusions, and mass-model mismatch.",

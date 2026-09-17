@@ -33,7 +33,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "End-to-end quadrotor autonomy that ties mapping, search, trajectory generation, and estimation into a single navigation stack.",
     "problem": "Combine the core components of autonomous flight into one pipeline that can plan and navigate safely through a 3D environment.",
     "approach": "Discretize the environment into voxels, run graph-based search to find collision-free routes, generate feasible trajectories from waypoints, and rely on state estimation to close the loop.",
     "results": "Delivered a cohesive stack that plans and executes navigation tasks across multiple maps with consistent, collision-free behavior.",

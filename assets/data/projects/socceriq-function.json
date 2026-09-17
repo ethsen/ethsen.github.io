@@ -38,7 +38,6 @@
     }
   ],
   "glance": {
-    "oneLiner": "Offline Q-function evaluation for attributing long-horizon reward to soccer actions.",
     "problem": "Action value in soccer is long-horizon and context-dependent, but event-aligned data is noisy and incomplete, making credit assignment and state representation difficult.",
     "approach": "Learn an offline Q-function using spatial state tensors (players + ball) and structured action vectors. A CNN encodes the state, an FCNN encodes actions, and a Q-head is trained with shaped possession rewards. We compare TD(0) targets against Monte Carlo returns.",
     "results": "TD(0) fits the Bellman equation with low error and generalizes better than Monte Carlo, but qualitative heatmaps still show bias toward safe backward passes. Dribble value surfaces are weak, and data quality limits interpretability.",

@@ -1,71 +1,6 @@
 {
   "projects": [
     {
-      "slug": "variational-autoencoders",
-      "title": "VAEs for Visual Abstraction in Art",
-      "subtitle": "Studying compression, latent structure, and downstream usefulness across VAE variants",
-      "summary": "This project studies how VAEs learn representations of art through structured latent spaces. Using classification and latent space analysis, we explore how visual abstractions emerge and how these representations can be interpreted.",
-      "kicker": "generative modeling",
-      "year": 2026,
-      "featured": true,
-      "thumbnail": "assets/img/projects/variational-autoencoders/project_header_grid.png",
-      "tags": [
-        "generative modeling",
-        "vision",
-        "deep learning"
-      ],
-      "mainTags": [
-        "art"
-      ],
-      "tech": [
-        "Python",
-        "PyTorch"
-      ]
-    },
-    {
-      "slug": "fashion-classification",
-      "title": "Accuracy vs. Interpretability in Designer-Level Fashion Classification",
-      "subtitle": "Designer-level fashion classification with interpretability analysis",
-      "summary": "Studied how model complexity and training strategies impact model performance on deisgner classification and model interpretability.",
-      "kicker": "computer vision",
-      "year": 2025,
-      "featured": true,
-      "thumbnail": "assets/img/projects/fashion-classification/idesigner.png",
-      "tags": [
-        "vision",
-        "deep learning"
-      ],
-      "mainTags": [
-        "fashion"
-      ],
-      "tech": [
-        "Python",
-        "PyTorch"
-      ]
-    },
-    {
-      "slug": "soccer-pass-forecast",
-      "title": "Learning Spatial Pass Feasibility Under Partial Observability in Soccer",
-      "subtitle": "Estimating pass feasibility from sparse freeze-frame state tensors",
-      "summary": "Studied whether interpretable pass probability surfaces can be learned from sparse event-aligned snapshots using structured spatial representations and controlled ablations.",
-      "kicker": "sports analytics",
-      "year": 2025,
-      "featured": true,
-      "thumbnail": "assets/img/projects/soccer-pass-forecast/thumbnail.png",
-      "tags": [
-        "deep learning",
-        "vision",
-        "spatial modeling"
-      ],
-      "mainTags": [
-        "sports"
-      ],
-      "tech": [
-        "PyTorch",
-        "StatsBomb"
-      ]
-    },
-    {
       "slug": "autonomous-quadrotor-navigation",
       "title": "Autonomous Quadrotor Navigation in 3D Occupancy Maps",
       "subtitle": "Integrated planning, trajectory generation, and state estimation for end-to-end autonomy",
@@ -79,12 +14,8 @@
         "planning",
         "state estimation"
       ],
-      "mainTags": [
-        "robotics"
-      ],
       "tech": []
     },
-    
     {
       "slug": "beat-the-expert-il-rl",
       "title": "Beat-the-Expert: An IL-RL Framework to Outperform Expert Racing Policies",
@@ -98,57 +29,10 @@
         "imitation learning",
         "autonomous racing"
       ],
-      "mainTags": [
-        "robotics",
-        "reinforcement learning"
-      ],
       "tech": [
         "Python",
         "PyTorch",
         "F1TENTH"
-      ]
-    },
-    {
-      "slug": "socceriq-function",
-      "title": "SoccerIQ-Function: Offline Q-Function Evaluation for Estimating Soccer Action Rewards",
-      "subtitle": "Offline evaluation of long-horizon action value from historical match data",
-      "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
-      "kicker": "sports analytics",
-      "year": 2025,
-      "featured": false,
-      "thumbnail": "assets/img/projects/socceriq-function/thumbnail.jpg",
-      "tags": [
-        "offline RL",
-        "value estimation"
-      ],
-      "mainTags": [
-        "sports",
-        "reinforcement learning"
-      ],
-      "tech": [
-        "Python",
-        "PyTorch"
-      ]
-    },
-    {
-      "slug": "particle-filter-slam",
-      "title": "Particle Filter SLAM on KITTI LiDAR",
-      "subtitle": "Coursework implementation of particle-filter SLAM with occupancy grid mapping",
-      "summary": "Implemented the particle-filter SLAM steps on KITTI LiDAR data using a provided skeleton, focusing on dynamics, observation updates, resampling, and occupancy grid mapping.",
-      "kicker": "robotics",
-      "year": 2025,
-      "featured": false,
-      "thumbnail": "assets/img/projects/particle-filter-slam/thumbnail.png",
-      "tags": [
-        "slam",
-        "localization"
-      ],
-      "mainTags": [
-        "robotics"
-      ],
-      "tech": [
-        "Python",
-        "NumPy"
       ]
     },
     {
@@ -165,17 +49,104 @@
         "planning",
         "trajectory"
       ],
-      "mainTags": [
-        "robotics"
-      ],
       "tech": []
     },
-    
+    {
+      "slug": "fashion-classification",
+      "title": "Accuracy vs. Interpretability in Designer-Level Fashion Classification",
+      "subtitle": "Designer-level fashion classification with interpretability analysis",
+      "summary": "Studied how model complexity and training strategies impact model performance on deisgner classification and model interpretability.",
+      "kicker": "computer vision",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/projects/fashion-classification/idesigner.png",
+      "tags": [
+        "vision",
+        "deep learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch"
+      ]
+    },
+    {
+      "slug": "particle-filter-slam",
+      "title": "Particle Filter SLAM on KITTI LiDAR",
+      "subtitle": "Coursework implementation of particle-filter SLAM with occupancy grid mapping",
+      "summary": "Implemented a Rao-Blackwellized particle filter SLAM pipeline on KITTI LiDAR, including SE(2) motion propagation, log-odds occupancy mapping, stratified resampling, and numerically stable weight updates.",
+      "kicker": "robotics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/particle-filter-slam/thumbnail.png",
+      "tags": [
+        "slam",
+        "localization"
+      ],
+      "tech": [
+        "Python",
+        "NumPy"
+      ]
+    },
+    {
+      "slug": "sim2real-droneracing",
+      "title": "Sim2Real Drone Racing",
+      "subtitle": "Comprehensive reinforcement learning project exploring sim2real methods in drone racing",
+      "summary": "This project takes on training a drone to race using IsaacSim, which then acted as the policy used in real life. This project involved implementing PPO from scratch, designing the reward structure, reset strategy, and observations that were used to train the policy.",
+      "kicker": "reinforcement learning",
+      "year": 2026,
+      "featured": true,
+      "thumbnail": "assets/img/projects/sim2real-droneracing/example.gif",
+      "tags": [
+        "deep learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch",
+        "IsaacSim"
+      ]
+    },
+    {
+      "slug": "soccer-pass-forecast",
+      "title": "Learning Spatial Pass Feasibility Under Partial Observability in Soccer",
+      "subtitle": "Estimating pass feasibility from sparse freeze-frame state tensors",
+      "summary": "Studied whether interpretable pass probability surfaces can be learned from sparse event-aligned snapshots using structured spatial representations and controlled ablations.",
+      "kicker": "sports analytics",
+      "year": 2025,
+      "featured": true,
+      "thumbnail": "assets/img/projects/soccer-pass-forecast/thumbnail.png",
+      "tags": [
+        "deep learning",
+        "vision",
+        "spatial modeling"
+      ],
+      "tech": [
+        "PyTorch",
+        "StatsBomb"
+      ]
+    },
+    {
+      "slug": "socceriq-function",
+      "title": "SoccerIQ-Function: Offline Q-Function Evaluation for Estimating Soccer Action Rewards",
+      "subtitle": "Offline evaluation of long-horizon action value from historical match data",
+      "summary": "Estimate the long-term value of soccer actions using offline Q-function evaluation with spatial state representations and structured action features.",
+      "kicker": "sports analytics",
+      "year": 2025,
+      "featured": false,
+      "thumbnail": "assets/img/projects/socceriq-function/image.png",
+      "tags": [
+        "offline RL",
+        "value estimation"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch"
+      ]
+    },
     {
       "slug": "ukf-orientation-estimation",
       "title": "Unscented Kalman Filtering for 3D Orientation Estimation",
-      "subtitle": "Quaternion UKF with IMU calibration and Vicon ground truth",
-      "summary": "Implemented a quaternion-based UKF for 3D orientation estimation from raw IMU data, with a full sensor calibration pipeline and Vicon-based evaluation.",
+      "subtitle": "Quaternion UKF with IMU calibration and motion-capture validation",
+      "summary": "Quaternion UKF for 3D attitude tracking from IMU data, with gravity-consistent accelerometer calibration, gyro scale/bias alignment to motion-capture ground truth, and manifold-aware estimation.",
       "kicker": "robotics",
       "year": 2025,
       "featured": false,
@@ -184,12 +155,28 @@
         "state estimation",
         "sensor fusion"
       ],
-      "mainTags": [
-        "robotics"
-      ],
       "tech": [
         "Python",
         "NumPy"
+      ]
+    },
+    {
+      "slug": "variational-autoencoders",
+      "title": "Representation Learning in Art Through Variational Autoencoders",
+      "subtitle": "Studying compression, latent structure, and downstream usefulness across VAE variants",
+      "summary": "This project studies how VAEs learn representations of art through structured latent spaces. Using classification and latent space analysis, we explore how visual abstractions emerge and how these representations can be interpreted.",
+      "kicker": "generative modeling",
+      "year": 2026,
+      "featured": true,
+      "thumbnail": "assets/img/projects/variational-autoencoders/project_header_grid.png",
+      "tags": [
+        "generative modeling",
+        "vision",
+        "deep learning"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch"
       ]
     }
   ]
