@@ -26,6 +26,15 @@
     "PyTorch"
   ],
   "links": [
+     {
+      "label": "Repo",
+      "href": "https://github.com/ethsen/Art-VAE",
+      "kind": "primary",
+      "icon": "assets/img/GitHub_Invertocat_Black.png",
+      "iconDark": "assets/img/GitHub_Invertocat_White.png",
+      "iconAlt": "GitHub",
+      "iconOnly": true
+    },
     {
       "label": "Report (PDF)",
       "href": "../assets/docs/variational-autoencoders-senatore.pdf",
