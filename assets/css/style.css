@@ -1669,7 +1669,11 @@ a:hover{ text-decoration: none; }
   margin: 12px 0;
   border-radius: 0;
 }
-.figure > img,
+.figure > img{
+  width: 100%;
+  height: auto;
+  display: block;
+}
 .figure--video > video{
   width: 100%;
   aspect-ratio: 16 / 9;
